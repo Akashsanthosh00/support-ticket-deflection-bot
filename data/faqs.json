@@ -1,0 +1,52 @@
+[
+  {
+    "id": "faq-001",
+    "title": "How do I reset my password?",
+    "content": "To reset your password, go to the login page and click 'Forgot Password'. Enter the email associated with your account and we'll send a reset link. The link expires after 30 minutes. If you don't receive the email, check your spam folder or request a new link after 5 minutes."
+  },
+  {
+    "id": "faq-002",
+    "title": "How do I update my billing information?",
+    "content": "You can update your billing information from Account Settings > Billing > Payment Methods. Click 'Edit' next to your current card, or 'Add Payment Method' to add a new one. Changes take effect on your next billing cycle immediately for new charges."
+  },
+  {
+    "id": "faq-003",
+    "title": "What is your subscription cancellation policy?",
+    "content": "You can cancel your subscription anytime from Account Settings > Subscription > Cancel Plan. You'll retain access until the end of your current billing period. We do not offer prorated refunds for early cancellation, but you can contact support for exceptions in special circumstances."
+  },
+  {
+    "id": "faq-004",
+    "title": "How do I export my data?",
+    "content": "Go to Account Settings > Data > Export. You can export your data as CSV or JSON. Exports for accounts with over 100,000 records may take up to 24 hours and you'll receive an email when it's ready."
+  },
+  {
+    "id": "faq-005",
+    "title": "How do I invite team members?",
+    "content": "Navigate to Team Settings > Members > Invite. Enter their email address and select a role (Admin, Editor, or Viewer). Invited members will receive an email with a link to join. Invites expire after 7 days."
+  },
+  {
+    "id": "faq-006",
+    "title": "What browsers are supported?",
+    "content": "We support the latest two versions of Chrome, Firefox, Safari, and Edge. Internet Explorer is not supported. For the best experience, we recommend Chrome or Firefox with JavaScript enabled."
+  },
+  {
+    "id": "faq-007",
+    "title": "How do I enable two-factor authentication (2FA)?",
+    "content": "Go to Account Settings > Security > Two-Factor Authentication and click 'Enable'. Scan the QR code with an authenticator app like Google Authenticator or Authy, then enter the 6-digit code to confirm. Save your backup codes somewhere safe."
+  },
+  {
+    "id": "faq-008",
+    "title": "Why is my dashboard loading slowly?",
+    "content": "Slow dashboard loading is often caused by large date ranges or too many active filters. Try narrowing your date range to 30 days or fewer, or reducing the number of active filters. Clearing your browser cache can also help. If the issue persists after trying these steps, contact support with your account ID and a screenshot."
+  },
+  {
+    "id": "faq-009",
+    "title": "Do you offer an API?",
+    "content": "Yes, we offer a REST API for Pro and Enterprise plans. API keys can be generated from Account Settings > Developer > API Keys. Full documentation is available at docs.example.com/api. Rate limits are 1000 requests/hour on Pro and 10000 requests/hour on Enterprise."
+  },
+  {
+    "id": "faq-010",
+    "title": "How do I change my plan?",
+    "content": "You can upgrade or downgrade your plan from Account Settings > Subscription > Change Plan. Upgrades take effect immediately with prorated billing. Downgrades take effect at the start of your next billing cycle."
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "tkt-1001",
+    "subject": "Can't log in after password reset",
+    "question": "I reset my password but now it says invalid credentials when I try to log in.",
+    "resolution": "This usually happens if the reset link was used more than once, or if there's a trailing space copied into the password field. We had the customer clear the field completely, retype the password manually (not paste), and it resolved the issue. If that fails, a fresh password reset link usually fixes it."
+  },
+  {
+    "id": "tkt-1002",
+    "subject": "Charged twice this month",
+    "question": "I see two charges on my card this billing cycle for the same plan.",
+    "resolution": "Escalated to billing team — duplicate charges are not resolvable by support directly and require a billing team review and manual refund if confirmed."
+  },
+  {
+    "id": "tkt-1003",
+    "subject": "CSV export missing rows",
+    "question": "My CSV export only has 500 rows but I have way more records than that.",
+    "resolution": "Confirmed this was due to an active filter left on from a previous session. Export respects active filters. Customer cleared filters and re-exported successfully, getting the full record count."
+  },
+  {
+    "id": "tkt-1004",
+    "subject": "How to add a team member with limited access",
+    "question": "I want to add someone to my team but only let them view reports, not edit anything.",
+    "resolution": "Directed customer to Team Settings > Members > Invite, and told them to select the 'Viewer' role which only allows read access to reports and dashboards, no editing permissions."
+  },
+  {
+    "id": "tkt-1005",
+    "subject": "API returning 429 errors",
+    "question": "My integration started failing with 429 status codes today.",
+    "resolution": "Checked account plan — customer was on Pro plan (1000 req/hr limit) and their integration was polling every second. Recommended batching requests or upgrading to Enterprise for higher rate limits, and added exponential backoff guidance."
+  },
+  {
+    "id": "tkt-1006",
+    "subject": "Want a refund for annual plan",
+    "question": "I just realized I don't need this anymore, can I get a refund for my annual subscription?",
+    "resolution": "Escalated to billing/account management team — refund requests outside the standard cancellation policy require manual review and approval, not something support can resolve directly."
+  },
+  {
+    "id": "tkt-1007",
+    "subject": "2FA backup codes lost",
+    "question": "I lost my phone and my 2FA backup codes, I can't get into my account.",
+    "resolution": "Escalated to security team for identity verification before account access could be restored — this requires manual identity verification and cannot be automated for security reasons."
+  },
+  {
+    "id": "tkt-1008",
+    "subject": "Dashboard extremely slow with large date range",
+    "question": "My dashboard takes over a minute to load when I select the last 12 months.",
+    "resolution": "Explained that large date ranges query more data and recommended narrowing to 30-90 day windows for daily use, with monthly rollup reports for longer-term views. Also suggested clearing cache."
+  }
+]

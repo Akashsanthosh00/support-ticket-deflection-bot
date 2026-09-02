@@ -1,0 +1,35 @@
+# --- Core ---
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+python-dotenv==1.0.1
+numpy==1.26.4
+httpx==0.27.2
+
+# --- LLM generation ---
+google-genai==2.21.0
+anthropic==0.34.2
+
+# --- Embeddings + reranking ---
+sentence-transformers==3.0.1   # bi-encoder for dense embeddings AND CrossEncoder for reranking
+
+# --- Vector DB (dense retrieval) ---
+qdrant-client==1.11.3
+
+# --- Keyword search (sparse retrieval, for hybrid) ---
+rank_bm25==0.2.2
+
+# --- Sentiment / frustration signal ---
+vaderSentiment==3.3.2
+
+# --- Evaluation ---
+ragas==0.1.20
+datasets==2.21.0
+
+# --- Frontend / demo ---
+streamlit==1.38.0
+
+# --- Data collection ---
+PyGithub==2.4.0
+GitPython==3.1.43
+requests==2.32.3
