@@ -164,7 +164,7 @@ I have already submitted a support request (ticket SU-505081). I cannot upgrade 
 
 Could someone help me identify why the organization is restricted and what I can check to restore access on the Free Plan without losing data?
 
-Thank you.",https://github.com/orgs/supabase/discussions/51576,,holdout,troubleshooting/understanding-the-usage-summary-on-the-dashboard-D7Gnle | storage/serving/bandwidth | troubleshooting/http-status-codes,partial,The usage-summary doc explains how usage and quotas are shown on the dashboard. Why this organization was restricted with HTTP 402 despite usage below quota needs Supabase support.,troubleshooting/understanding-the-usage-summary-on-the-dashboard-D7Gnle,,check
+Thank you.",https://github.com/orgs/supabase/discussions/51576,,holdout,troubleshooting/understanding-the-usage-summary-on-the-dashboard-D7Gnle | storage/serving/bandwidth | troubleshooting/http-status-codes,partial,"The HTTP status codes doc explains that a 402 means a service restriction under the Fair Use Policy, and that the response includes codes such as exceed_*_quota or overdue_payment saying why. It does not explain why the dashboard shows usage below quota, so this needs Supabase support.",troubleshooting/http-status-codes,,
 T007,Troubleshooting,"SQLSTATE 40001 (serialization_failure) in an RPC function causes infinite retries
 
 _This is a copy of a troubleshooting article on Supabase's docs site. It may be missing some details from the original. View the [original article](https://supabase.com/docs/guides/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b)._
@@ -215,7 +215,7 @@ Or is this restriction relevant only when a higher assurance level (`aal2`) is a
 
 **2. Users with MFA enrolled**
 
-If an MFA-enabled user signs in using only the first factor and re",https://github.com/orgs/supabase/discussions/51826,,holdout,auth/auth-mfa | auth/auth-mfa/totp | auth/auth-mfa/phone,partial,"The docs explain MFA and assurance levels (aal1 after normal sign-in, aal2 after MFA) but only partly cover the 'Limit duration of AAL1 sessions' setting. Whether it applies to users without MFA enrolled needs confirmation from Supabase.",auth/auth-mfa,,check
+If an MFA-enabled user signs in using only the first factor and re",https://github.com/orgs/supabase/discussions/51826,,holdout,auth/auth-mfa | auth/auth-mfa/totp | auth/auth-mfa/phone,partial,"The MFA doc explains aal1 (normal sign-in) versus aal2 (after a second factor), but it does not describe the 'Limit duration of AAL1 sessions' setting or whether it applies to users without MFA enrolled.",auth/auth-mfa,,
 T009,Questions,"Managed Supabase: safe deployment of db_pre_request before exposing custom API schema
 
 Hi Supabase community,
@@ -417,7 +417,7 @@ Please help us check PostgreSQL, Supavisor, disk I/O, recovery status, and the l
 
 We currently use a temporary read-only website fallback because the database is unavailable. We need to restore access to the original Production database.
 
-Thank you.",https://github.com/orgs/supabase/discussions/51489,,holdout,troubleshooting/project-status-reports-unhealthy-services | troubleshooting/exhaust-ram | troubleshooting/using-sqlalchemy-with-supabase-FUqebT,partial,"The docs explain what an Unhealthy project status means and common causes such as exhausted RAM, CPU or disk IO, and how to check them. Recovering a specific project may need a restart, an upgrade or Supabase support.",troubleshooting/project-status-reports-unhealthy-services,,check
+Thank you.",https://github.com/orgs/supabase/discussions/51489,,holdout,troubleshooting/project-status-reports-unhealthy-services | troubleshooting/exhaust-ram | troubleshooting/using-sqlalchemy-with-supabase-FUqebT,partial,"Unhealthy services usually mean the database is overloaded or undersized. The doc suggests restarting the database in Project Settings, increasing compute and disk, or performance-tuning, and says repeated failures point to ongoing overload. It does not cover a project that stays down after a restart.",troubleshooting/project-status-reports-unhealthy-services,,
 T018,Questions,"How can I create an AS RESTRICTIVE RLS policy on storage.objects in hosted Supabase?
 
 Hi Supabase community,
@@ -449,7 +449,7 @@ This policy is intended to restrict existing PERMISSIVE INSERT policies. Replaci
 
 I want to follow the supported security ",https://github.com/orgs/supabase/discussions/52150,"The SQL editor can create policies on storage.objects.  You just don't use alter table method to do it.
 https://supabase.com/docs/guides/storage/security/access-control#policy-examples
-Shows SQL examples that work from the SQL editor.",holdout,auth/third-party/custom-oidc | auth/third-party/firebase-auth | storage/security/access-control,yes,Create the RESTRICTIVE policy with CREATE POLICY in the SQL Editor; do not use ALTER TABLE on storage.objects. The Storage access-control doc has SQL policy examples that work from the SQL Editor.,storage/security/access-control,,check
+Shows SQL examples that work from the SQL editor.",holdout,auth/third-party/custom-oidc | auth/third-party/firebase-auth | storage/security/access-control,partial,"The Storage access-control doc shows how to create policies on storage.objects with CREATE POLICY in SQL, but it does not mention RESTRICTIVE policies. A community answer says to create the policy in the SQL Editor rather than altering the table.",storage/security/access-control,,
 T019,Troubleshooting,"Working around the Edge Function secrets limit
 
 _This is a copy of a troubleshooting article on Supabase's docs site. It may be missing some details from the original. View the [original article](https://supabase.com/docs/guides/troubleshooting/working-around-the-edge-function-secrets-limit)._
@@ -574,7 +574,7 @@ pg_catalog.lo_from_bytea(oid, bytea)
 
 are owned by supabase_admin and grant EXECUTE to PUBLIC.
 
-We want a dedicated application LOGIN that is genuinely read-only a",https://github.com/orgs/supabase/discussions/50363,,tune,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | database/postgres/roles,partial,The docs explain that objects owned by supabase_admin cannot be altered by the postgres role and how custom roles inherit privileges. They do not specifically cover revoking PUBLIC EXECUTE on pg_catalog functions.,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,check
+We want a dedicated application LOGIN that is genuinely read-only a",https://github.com/orgs/supabase/discussions/50363,,tune,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | database/postgres/roles,yes,"No. Large-object functions such as lo_create grant execute to PUBLIC, and the postgres role cannot revoke it because Supabase roles own those objects. A revoke on them removes nothing.",troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,
 T025,Questions,"Managed shared Supavisor transaction pooler: upstream encryption and server verification guarantees
 
 What current managed-service guarantee covers the shared Supavisor transaction pooler's connection to PostgreSQL, separately from the client's TLS connection to the pooler?
@@ -710,7 +710,7 @@ What I've ruled out
 Not the Stripe SDK. Rewrote the function to remove stripe entirely, replacing signature verification with a direct HMAC-SHA256 implementation using only Deno's built-in Web Crypto. Identical hang.
 Not the import specifier. Tried both jsr:@supabase/server@^1 and npm:@supabase/server (matching the docs example exactly). Identical hang.
 Not verify_jwt. Confirmed OFF in function Settings, redeployed multiple times after changing it.
-Not leftover placeholder code. Originally hit a 401 caused by the defa",https://github.com/orgs/supabase/discussions/49686,,tune,functions/auth | functions/error-codes | functions/examples/semantic-search,partial,The Edge Functions error-codes doc explains that 546 (WORKER_RESOURCE_LIMIT) means the function exceeded its resource limits. It does not explain why this minimal function hangs.,functions/error-codes,,check
+Not leftover placeholder code. Originally hit a 401 caused by the defa",https://github.com/orgs/supabase/discussions/49686,,tune,functions/auth | functions/error-codes | functions/examples/semantic-search,partial,"The error-codes doc explains that WORKER_RESOURCE_LIMIT (546) means the function exceeded memory or CPU limits, and says to check the function logs to see which limit. It does not explain why this minimal function hangs.",functions/error-codes,,
 T030,Troubleshooting,"Error: ""NXDOMAIN"" when connecting to a Supabase project
 
 _This is a copy of a troubleshooting article on Supabase's docs site. It may be missing some details from the original. View the [original article](https://supabase.com/docs/guides/troubleshooting/nxdomain-error-connecting-to-a-supabase-project)._
@@ -759,7 +759,7 @@ I do not want to use `ALTER OWNER`, `SET ROLE`, disable RLS, or grant internal r
 
 No migrations have been applied yet.
 
-Thank you.",https://github.com/orgs/supabase/discussions/51517,,tune,auth/third-party/firebase-auth | database/postgres/row-level-security | auth/third-party/custom-oidc,yes,Create the RESTRICTIVE policy with CREATE POLICY in the SQL Editor; do not use ALTER TABLE on storage.objects. The Storage access-control doc has SQL policy examples that work from the SQL Editor.,storage/security/access-control,,check
+Thank you.",https://github.com/orgs/supabase/discussions/51517,,tune,auth/third-party/firebase-auth | database/postgres/row-level-security | auth/third-party/custom-oidc,partial,"The Storage access-control doc shows how to create policies on storage.objects with CREATE POLICY in SQL, but it does not mention RESTRICTIVE policies.",storage/security/access-control,,
 T032,Questions,"anon/authenticated unexpectedly have TRUNCATE and TRIGGER on public/storage tables in new Supabase project
 
 We created a new Supabase project and applied our migration set successfully.
@@ -785,7 +785,7 @@ Are these TRUNCATE / TRIGGER grants expected managed defaults?
 Can anon or authenticated actually exercise them despite RLS?
 What is the supported way to revoke them from existing public and storage tables?
 What is the supported way to change the managed default privileges so future tables do not receive them?
-Would removing these grants interfere with Supabase Storage or other managed services?",https://github.com/orgs/supabase/discussions/50095,,tune,troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | database/postgres/row-level-security,partial,The docs explain where default privileges on public and storage tables come from and how roles inherit them. They do not give a supported way to change the managed defaults from the postgres role.,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,check
+Would removing these grants interfere with Supabase Storage or other managed services?",https://github.com/orgs/supabase/discussions/50095,,tune,troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | database/postgres/row-level-security,no,,,,
 T033,Troubleshooting,"TLS handshake failures after removal of CBC-mode ciphers
 
 _This is a copy of a troubleshooting article on Supabase's docs site. It may be missing some details from the original. View the [original article](https://supabase.com/docs/guides/troubleshooting/tls-handshake-failures-after-cbc-cipher-removal)._
@@ -945,7 +945,7 @@ https://supabase.com/kb/troubleshooting/pg_dump-fails-with-query-would-be-affect
 What is the recommended hosted-Supabase approach for the following?
 
 1. **Backup reads:** grant only the schema/table/sequence reads and catalog access needed for a complete export of the intended scope, including RLS-protected data. Where applicable, how should SELECT on existing large objects be granted without permitting their creation or modification?
-2. **Inherited capabilities:** handle function EXECUTE and database TEMP pr",https://github.com/orgs/supabase/discussions/52117,,tune,troubleshooting/pg_dump-fails-with-query-would-be-affected-by-row-level-security-policy-1d5783 | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | database/postgres/row-level-security,partial,The pg_dump doc explains the 'query would be affected by row-level security policy' error and how to dump with a suitable role. It does not give a fully write-proof backup role design.,troubleshooting/pg_dump-fails-with-query-would-be-affected-by-row-level-security-policy-1d5783,,check
+2. **Inherited capabilities:** handle function EXECUTE and database TEMP pr",https://github.com/orgs/supabase/discussions/52117,,tune,troubleshooting/pg_dump-fails-with-query-would-be-affected-by-row-level-security-policy-1d5783 | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | database/postgres/row-level-security,partial,"The doc gives a backup role recipe: bypassrls, pg_read_all_data and default_transaction_read_only, run with pg_dump directly. It notes the role can still queue pg_net requests via PUBLIC and cannot read large objects. A read-only default is only a session setting, so it is not a fully server-enforced write-proof role.",troubleshooting/pg_dump-fails-with-query-would-be-affected-by-row-level-security-policy-1d5783,,
 T040,Questions,"Supabase Free Plan - Multi factor got deleted of authenticator app
 
 Hi, 
@@ -988,7 +988,7 @@ Could someone please help me understand:
 
 My support ticket ID is `SU-500761`.
 
-Thank you for your help.",https://github.com/orgs/supabase/discussions/51486,,tune,troubleshooting/project-status-reports-unhealthy-services | troubleshooting/exhaust-ram | troubleshooting/interpreting-supabase-grafana-cpu-charts-9JSlkC,partial,"The docs explain what an Unhealthy project status means and common causes such as exhausted RAM, CPU or disk IO, and how to check them. Recovering a specific project may need a restart, an upgrade or Supabase support.",troubleshooting/project-status-reports-unhealthy-services,,check
+Thank you for your help.",https://github.com/orgs/supabase/discussions/51486,,tune,troubleshooting/project-status-reports-unhealthy-services | troubleshooting/exhaust-ram | troubleshooting/interpreting-supabase-grafana-cpu-charts-9JSlkC,partial,"Unhealthy services usually mean the database is overloaded or undersized. The doc suggests restarting the database, increasing compute and disk, or performance-tuning. It does not cover a project that stays unhealthy after a restart.",troubleshooting/project-status-reports-unhealthy-services,,
 T042,Troubleshooting,"Realtime: Postgres Changes Troubleshooting
 
 _This is a copy of a troubleshooting article on Supabase's docs site. It may be missing some details from the original. View the [original article](https://supabase.com/docs/guides/troubleshooting/realtime-postgres-changes-troubleshooting)._
@@ -1070,7 +1070,7 @@ The connected postgres role can read the managed Auth objects, but it does not a
 The transaction was rolled back cleanly. I am not trying to disable RLS, broaden grants, change ownership, or bypass Supabase Auth security.
 My questions are:
 1. Is there a supported way on hosted Supabase to grant these narrow privileges to application definer roles?
-2. If direct grants on managed auth objects are intentionally unsupported, what is the recommended pattern for DB-side authorization that needs auth.uid(), auth.j",https://github.com/orgs/supabase/discussions/51263,,tune,database/postgres/row-level-security | troubleshooting/realtime-must-be-owner-of-table-messages | database/postgres/column-level-security,partial,"The docs explain how custom roles inherit privileges and where default privileges come from. They do not clearly give a supported way to change privileges on provider-owned objects or schemas, so the exact request needs Supabase confirmation.",troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,check
+2. If direct grants on managed auth objects are intentionally unsupported, what is the recommended pattern for DB-side authorization that needs auth.uid(), auth.j",https://github.com/orgs/supabase/discussions/51263,,tune,database/postgres/row-level-security | troubleshooting/realtime-must-be-owner-of-table-messages | database/postgres/column-level-security,partial,The doc says Supabase schemas such as auth do not grant usage to PUBLIC and that Supabase roles own those objects. It gives no supported way to grant USAGE on the auth schema to a custom role.,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,
 T046,Questions,"Locked out of dashboard: account email is on Supabase's outbound suppression list (""recipient marked as inactive""), ticket SU-486576
 
  ## What happens
@@ -1443,7 +1443,7 @@ Is there a problem with DNS provisioning or the API hostname for this project?
 
 If this requires an internal DNS repair or reprovisioning, could the Supabase team advise on the appropriate next steps?
 
-Thank you for your help.![image](https://github.com/user-attachments/assets/219d9b3c-104e-4eaf-86a9-4784bb6658e7)![image](https:/",https://github.com/orgs/supabase/discussions/51752,,tune,troubleshooting/nxdomain-error-connecting-to-a-supabase-project | auth/custom-oauth-providers | auth/social-sign-in/auth-github,partial,"For NXDOMAIN, check the project reference in the hostname, that the host ends in .supabase.co, and whether the project is paused or deleted. A healthy project whose hostname still does not resolve needs Supabase support.",troubleshooting/nxdomain-error-connecting-to-a-supabase-project,,check
+Thank you for your help.![image](https://github.com/user-attachments/assets/219d9b3c-104e-4eaf-86a9-4784bb6658e7)![image](https:/",https://github.com/orgs/supabase/discussions/51752,,tune,troubleshooting/nxdomain-error-connecting-to-a-supabase-project | auth/custom-oauth-providers | auth/social-sign-in/auth-github,partial,"The NXDOMAIN doc lists causes in order: a wrong project reference, a paused project, a deleted project. This asker has already ruled these out, so a healthy project that still does not resolve likely needs Supabase support.",troubleshooting/nxdomain-error-connecting-to-a-supabase-project,,
 T060,Questions,"Hosted Supabase least-privilege runtime role: PUBLIC TEMP and PostGIS SECURITY DEFINER functions
 
 We are configuring a restricted PostgreSQL role for a server-side application on hosted Supabase, with Supavisor transaction pooling as the intended runtime connection. We would appreciate guidance on the supported privilege boundary before changing platform-related grants.
@@ -1560,7 +1560,7 @@ Links to official documentation or relevant source would be very helpful.
 
 ## Context and safety
 
-This question was also posted in the Supabase Discord help forum. We are pursuing private support for project-specific clarifi",https://github.com/orgs/supabase/discussions/51244,,tune,auth/auth-mfa/totp | auth/auth-mfa | auth/auth-mfa/phone,partial,"The docs explain MFA and assurance levels (aal1 after normal sign-in, aal2 after MFA) but only partly cover the 'Limit duration of AAL1 sessions' setting. Whether it applies to users without MFA enrolled needs confirmation from Supabase.",auth/auth-mfa,,check
+This question was also posted in the Supabase Discord help forum. We are pursuing private support for project-specific clarifi",https://github.com/orgs/supabase/discussions/51244,,tune,auth/auth-mfa/totp | auth/auth-mfa | auth/auth-mfa/phone,partial,"The MFA doc explains aal1 versus aal2, but it does not describe the 'Limit duration of AAL1 sessions' setting or how to verify its effective timeout.",auth/auth-mfa,,
 T064,Questions,"Supported least-privilege, FORCE RLS, and recovery pattern on hosted Supabase?
 
 We are validating a security-sensitive migration for application-owned tables on hosted Supabase and would appreciate a current, provider-supported pattern. This is intentionally project-agnostic; no project access or production change is requested.
@@ -1574,7 +1574,7 @@ Questions:
 5. What is the recommended method to rehearse an exact migration and reverse migration against a populated isolated copy, then prove restoration/rollback without relying on assumptions about managed-role recovery?
 6. With the announced October 30, 2026 public-schema grant-default change, should migrations now include explicit grants for every new application object on existing projects?
 
-We",https://github.com/orgs/supabase/discussions/51213,,tune,troubleshooting/realtime-must-be-owner-of-table-messages | database/postgres/column-level-security | database/postgres/row-level-security,partial,"The RLS docs cover enabling RLS and writing policies. A supported ownership, privilege and FORCE RLS pattern for managed roles is not fully covered.",database/postgres/row-level-security,,check
+We",https://github.com/orgs/supabase/discussions/51213,,tune,troubleshooting/realtime-must-be-owner-of-table-messages | database/postgres/column-level-security | database/postgres/row-level-security,partial,"The doc covers granting a service role only what it needs, that a role you create is subject to RLS unless it has bypassrls, and that FORCE ROW LEVEL SECURITY applies RLS to table owners. It does not give a recovery pattern for managed roles.",troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,
 T065,Questions,"Hosted postgres cannot GRANT USAGE ON SCHEMA auth to a custom NOLOGIN role; need supabase_admin
 
 Official support ticket: SU-497097
@@ -1595,7 +1595,7 @@ Verified on this project:
 - ros_enrichment_executor remains NOLOGIN / NOINHERIT / NOSUPERUSER / NOBYPASSRLS
 - It has no SELECT on auth.users
 
-Do not change schema ownership, grant superuser/BYPASSRLS, add role memberships, or grant table privileges on auth.users. Only schema USAGE for that existing role.",https://github.com/orgs/supabase/discussions/51357,,tune,database/postgres/row-level-security | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16,partial,"The docs explain how custom roles inherit privileges and where default privileges come from. They do not clearly give a supported way to change privileges on provider-owned objects or schemas, so the exact request needs Supabase confirmation.",troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,check
+Do not change schema ownership, grant superuser/BYPASSRLS, add role memberships, or grant table privileges on auth.users. Only schema USAGE for that existing role.",https://github.com/orgs/supabase/discussions/51357,,tune,database/postgres/row-level-security | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16,partial,The doc says Supabase schemas such as auth do not grant usage to PUBLIC and that Supabase roles own those objects. It gives no supported way to grant USAGE on the auth schema to a custom role.,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,
 T066,Feature Requests,"Example: AffixIO gate for agent-triggered DB/admin actions
 
 ### Ask
@@ -1670,7 +1670,7 @@ My application bootstrap needs only:
 
     USAGE ON SCHEMA auth
 
-for exactly four narrow custom NOLOGIN internal role",https://github.com/orgs/supabase/discussions/51314,,tune,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | database/postgres/row-level-security | database/postgres/roles,partial,"The docs explain how custom roles inherit privileges and where default privileges come from. They do not clearly give a supported way to change privileges on provider-owned objects or schemas, so the exact request needs Supabase confirmation.",troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,check
+for exactly four narrow custom NOLOGIN internal role",https://github.com/orgs/supabase/discussions/51314,,tune,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c | database/postgres/row-level-security | database/postgres/roles,partial,The doc says Supabase schemas such as auth do not grant usage to PUBLIC and that Supabase roles own those objects. It gives no supported way to grant USAGE on the auth schema to a custom role.,troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,
 T068,Questions,"PostgREST stops serving while Postgres stays healthy — one idle `authenticator` connection precedes each outage (4x in 23 days)
 
 ## What we're seeing
@@ -1875,7 +1875,7 @@ I am specifically avoiding:
 - database password workarounds
 
 A Supabase Support case is already open. I am looking for confirmation of the
-supported remediation, not an unsupported role modifi",https://github.com/orgs/supabase/discussions/49738,,tune,troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae | troubleshooting/realtime-must-be-owner-of-table-messages | troubleshooting/branch-in-migrations-failed-status,partial,"cli_login_postgres is a temporary role created by the CLI and owned by supabase_admin, so standard users cannot modify or delete it. The doc explains that 'permission denied' on it is expected, but not how to fix the 42501 on `migration list`.",troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae,,check
+supported remediation, not an unsupported role modifi",https://github.com/orgs/supabase/discussions/49738,,tune,troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae | troubleshooting/realtime-must-be-owner-of-table-messages | troubleshooting/branch-in-migrations-failed-status,partial,cli_login_postgres is a managed role the CLI creates when it runs without a database password. The doc says that supplying the password (SUPABASE_DB_PASSWORD or -p) makes the CLI connect as postgres directly instead. It does not explain the 42501 on role initialization.,troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae,,
 T076,Questions,"How should PUBLIC EXECUTE on `unaccent` functions owned by `supabase_admin` be handled on hosted Supabase?
 
 Hi,
@@ -1930,7 +1930,7 @@ postgres member of supabase_admin = false
 postgres can SET ROLE supabase_admin = false
 ```
 
-So this ap",https://github.com/orgs/supabase/discussions/50046,,tune,database/extensions/pg_net | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,partial,The troubleshooting doc says revoking grants on objects owned by supabase_admin (shown for pg_net) has no effect. It does not cover unaccent specifically.,troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16,,check
+So this ap",https://github.com/orgs/supabase/discussions/50046,,tune,database/extensions/pg_net | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,yes,"Functions in the extensions schema grant execute to PUBLIC, but a role cannot use them without usage on the schema, so revoking is not needed. Supabase roles own these objects, so a revoke by postgres removes nothing.",troubleshooting/custom-role-inherits-privileges-that-were-not-explicitly-granted-ddaa1c,,
 T077,Troubleshooting,"'Permission denied' when deleting the 'cli_login_postgres' role
 
 _This is a copy of a troubleshooting article on Supabase's docs site. It may be missing some details from the original. View the [original article](https://supabase.com/docs/guides/troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae)._
@@ -1950,7 +1950,7 @@ In the Supabase ecosystem, specific database roles are generated to help communi
 
 ## **Understanding the problem: ""Permission denied""**
 
-If you at",https://github.com/orgs/supabase/discussions/50148,,tune,troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae | database/postgres/roles | database/extensions/wrappers/overview,yes,"cli_login_postgres is a temporary role created by the CLI and owned by supabase_admin, so standard users cannot delete it. 'Permission denied' is expected, and the role's password expires within a few hundred seconds.",troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae,yes,
+If you at",https://github.com/orgs/supabase/discussions/50148,,tune,troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae | database/postgres/roles | database/extensions/wrappers/overview,yes,"DROP ROLE fails because supabase_admin manages cli_login_postgres. Delete it through the Management API (DELETE /v1/projects/<ref>/cli/login-role with a personal access token). The CLI recreates it whenever it runs without a database password, so set SUPABASE_DB_PASSWORD or pass -p.",troubleshooting/permission-denied-when-deleting-the-cli_login_postgres-role-808bae,yes,
 T078,General,"Can i Refund?
 
 [Receipt-EMZGJZ-00003.pdf](https://github.com/user-attachments/files/32055606/Receipt-EMZGJZ-00003.pdf)
@@ -1975,7 +1975,7 @@ Could a Supabase Storage maintainer clarify:
    - cancellation without a successful TUS DELETE;
    - ordinary object deletion;
    - deletion or authorization changes racing with a final PATCH.
-5. ",https://github.com/orgs/supabase/discussions/51060,,tune,storage/uploads/resumable-uploads | storage/uploads/s3-uploads | database/replication/pipelines/ducklake,partial,Docs state an unfinished resumable-upload URL expires within 24 hours and S3 multipart uploads are aborted after 24 hours. They do not state a cleanup guarantee for all TUS-created state.,storage/uploads/resumable-uploads,,check
+5. ",https://github.com/orgs/supabase/discussions/51060,,tune,storage/uploads/resumable-uploads | storage/uploads/s3-uploads | database/replication/pipelines/ducklake,partial,The doc says a resumable-upload URL is valid for up to 24 hours and must be restarted after that. It does not state a cleanup guarantee for all TUS-created state.,storage/uploads/resumable-uploads,,
 T081,Questions,"Unclaimed Database disconnected from bolt project
 
 Hello, I was working on a project and when I started getting high traffic, the I lost connection to the database and I had not claimed the database in my superbase account, how can I restore this? Anyone help please.",https://github.com/orgs/supabase/discussions/50304,,tune,troubleshooting/realtime-warn-sending-broadcast-message | troubleshooting/exhaust-swap | database/replication/manual-replication-monitoring,no,,,,
@@ -2112,7 +2112,7 @@ I copied the connection details directly from the Supabase Dashboard and tried b
 
 Could anyone advise how to troubleshoot a Supavisor tenant/user lookup error and verify the correct pooler hostname and username?
 
-Thank you!",https://github.com/orgs/supabase/discussions/51649,,tune,database/connecting-to-postgres | troubleshooting/supavisor-error-password-authentication-failed-after-password-rotation | troubleshooting/using-sqlalchemy-with-supabase-FUqebT,yes,"Copy the shared pooler host from the Connect dialog instead of typing it (the aws-N index is not guessable, and aws-0 is not a safe default), and use the username postgres.[PROJECT-REF] (or [ROLE].[PROJECT-REF]) for shared pooler connections.",troubleshooting/tenant-or-user-not-found,,check
+Thank you!",https://github.com/orgs/supabase/discussions/51649,,tune,database/connecting-to-postgres | troubleshooting/supavisor-error-password-authentication-failed-after-password-rotation | troubleshooting/using-sqlalchemy-with-supabase-FUqebT,partial,"The doc says this error is almost always the host or username: copy the shared pooler host from the Connect dialog, and use postgres.[PROJECT-REF]. This asker says they already copied the values, so if both modes still fail, Supabase support is the next step.",troubleshooting/tenant-or-user-not-found,,
 T089,Questions,"Locked out of dashboard: ""Invalid TOTP code entered"" (Ticket SU-461075)
 
 Hello community and Supabase team,I am currently locked out of my Supabase dashboard. When trying to sign in via GitHub OAuth, the dashboard requires a TOTP code and returns the following error: ""Failed to sign in: Invalid TOTP code entered"".I have full access to my GitHub account, but I don't have the exclusive Supabase MFA codes/TOTP synced anymore. My live website bizmix.com.br relies on this backend, but I can't access the admin panel to manage my tables.I have already opened a support ticket: SU-461075.Could an administrator please help me reset or disable the Multi-Factor Authentication (MFA) for my account?Thank you very much!",https://github.com/orgs/supabase/discussions/49861,,tune,auth/auth-mfa/totp | auth/auth-mfa | auth/social-sign-in/auth-facebook,no,,,,
@@ -2221,7 +2221,7 @@ PostgreSQL returned:
 WARNING: no privileges could be revoked for ""net""
 ```
 
-Effective access remained unchanged. I stopped there; table",https://github.com/orgs/supabase/discussions/50335,,tune,database/extensions/pg_net | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | troubleshooting/database-roles-can-read-request-headers-queued-by-pg_net-ad6357,yes,"Revoking access to pg_net objects owned by supabase_admin has no effect, and any role that can use pg_net can read queued request headers. See the doc on which roles can use pg_net before queueing a reusable token.",troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16,,check
+Effective access remained unchanged. I stopped there; table",https://github.com/orgs/supabase/discussions/50335,,tune,database/extensions/pg_net | troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16 | troubleshooting/database-roles-can-read-request-headers-queued-by-pg_net-ad6357,yes,"You cannot restrict it: supabase_admin owns the net objects and Supabase does not support changing their grants, so revokes have no effect. Treat any credential sent through pg_net as readable by every role that can connect. Keep the net schema out of exposed API schemas, or drop pg_net if you do not need it.",troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16,,
 T095,Questions,"Edge Function returns HTTP 520 ""Origin is disallowed"" for every POST request
 
 ## Problem
@@ -2265,4 +2265,4 @@ The problem still occurs after redeployment.
 Supabase support ticket: SU-517126
 
 What project or gateway setting could reject all unsafe HTTP methods with
-""Origin is disallowed",https://github.com/orgs/supabase/discussions/52052,,tune,database/extensions/pg_net | functions/status-codes | functions/error-codes,partial,"The Edge Functions status-code and error-code docs list the codes the platform returns. They do not explain an HTTP 520 'Origin is disallowed' on POST requests, so this likely needs Supabase support.",functions/error-codes,,check
+""Origin is disallowed",https://github.com/orgs/supabase/discussions/52052,,tune,database/extensions/pg_net | functions/status-codes | functions/error-codes,no,,,,
