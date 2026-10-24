@@ -42,3 +42,7 @@ dist/
 # Generated vector/search indexes
 index_store/
 qdrant_store/
+
+
+data/tickets_raw.json
+data/supabase_docs.jsonl
