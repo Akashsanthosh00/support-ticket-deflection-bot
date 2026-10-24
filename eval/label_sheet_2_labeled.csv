@@ -1,0 +1,1282 @@
+﻿id,category,ticket_text,source_url,accepted_answer_excerpt,split,suggested_docs,should_answer,reference_answer,doc_id,doc_copy,verify
+Q001,Questions,"Why does my project hit resource limits if Supabase says API requests are unlimited?
+
+Hi everyone,
+
+I'm using the Supabase Free Plan and I'm a bit confused about the resource limits.
+
+From the documentation, I understand that API requests are unlimited, but my project keeps getting warnings like:
+
+Project is exhausting multiple resources
+Database performance is affected
+Queries start timing out or become very slow
+
+My question is:
+
+If API requests are unlimited, why does the project hit resource limits? For example, if an application has 50,000 active users, wouldn't it naturally generate a huge number of API requests?
+
+Is the bottleneck actually:
+
+Database CPU?
+Memory?
+Disk I/O?
+Connection limits?
+Number of concurrent queries?
+Something else?
+
+For example:
+
+Suppose I have only 5,000 rows in my database.
+But 50,000 users are making requests at the same time.
+If API requests are unlimited, why would the database become resource exhausted?
+
+I'd like to understand what the real limitation is and what architecture or optimization Supabase recommends for high-concurrency applications.
+
+Any explanation or best practices would be appreciated.
+
+Thanks!
+
+<img width=""2794"" height=""212"" alt=""image"" src=""https://github.com/user-attachments/assets/06afd1c0-0aef-464c-b4df-53dca88fa7d7"" />
+",https://github.com/orgs/supabase/discussions/48679,"The ""unlimited requests"" wording trips a lot of people up. It just means Supabase doesn't cap or bill you per API call, it does NOT mean the database can serve unlimited concurrent work. Its 2 different layers: the request count is unlimited, but the compute answering each request is very finite, especially on free tier.
+
+And the bottleneck is basically never row count. 5,000 rows is nothing. It's concurrency and what each query consumes. Roughly in the order things break:
+
+Connection limits are usually the problem. Postgres only handles so many simultaneous connections, and the free tier ",holdout,functions/limits | troubleshooting/edge-function-546-error-response | troubleshooting/high-cpu-and-slow-queries-with-error-must-be-a-superuser-to-terminate-superuser-process,no,,,,
+Q002,Questions,"When should I use Row Level Security (RLS) instead of checking permissions only in my backend?
+
+I'm building a Supabase application where all requests currently go through my backend before reaching the database.
+
+If my backend already validates authentication and authorization, is it still considered best practice to enable Row Level Security (RLS) on every table?
+
+What are the advantages of keeping RLS enabled in this architecture, and are there any performance or maintenance trade-offs?",https://github.com/orgs/supabase/discussions/48665,"Even if all requests go through your backend, enabling RLS is generally considered a defense-in-depth best practice.
+
+Here's why:
+
+Database-level security: RLS ensures that data access rules are enforced directly by PostgreSQL, regardless of which application or service is making the request.
+Reduced risk of mistakes: If a new API endpoint, Edge Function, or future service accidentally bypasses an authorization check, RLS still prevents unauthorized access.
+Safer client-side access: If you later decide to let your frontend query Supabase directly using the anonymous or authenticated keys",holdout,database/postgres/row-level-security | auth/third-party/clerk | troubleshooting/realtime-postgres-changes-troubleshooting,partial,"RLS is a defense-in-depth layer enforced by Postgres regardless of which service connects, and tables in exposed schemas should have it enabled. The page covers RLS basics but may not discuss the trade-offs for a backend-only architecture.",database/postgres/row-level-security,,check
+Q003,Questions,"Require current password when changing password bug?
+
+Whenever I am trying to execute the `userUpdate` method, using the following payload:
+
+```
+{
+  email: ""[email]"",
+  current_password: ""some_current_password"",
+  password: ""new_password"",
+}
+```
+
+And I am inserting a wrong `current_password`, I still can send a `POST - 200` request and changing my credentials.
+
+I have the _Require current password when updating_ settings enabled in Dashboard > Auth Providers.
+
+Is there some kind of bug or I am doing something wrong?
+
+I only get an error when I remove the `current_password` property from the payload. But not when inserting a different password.
+
+Thank you!
+
+### Expected behavior
+
+1. `current_password` omitted → request fails (expected)
+2. `current_password` present but incorrect → request still succeeds with 200 (bug — should fail)",https://github.com/orgs/supabase/discussions/48293,,holdout,auth/password-security | troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y | auth/passwords,partial,The password docs cover the 'Require current password when updating' setting. They may not explain why a wrong current_password still returns 200 here.,auth/passwords,,check
+Q004,Questions,"My Network Traffic from Observability is different from Egress per day
+
+I see that my Egress from network traffic for 24 hours is about 0.35MB but my Egress per day is about 150MB . What am i missing?",https://github.com/orgs/supabase/discussions/48198,,holdout,troubleshooting/realtime-egress-faq | troubleshooting/all-about-supabase-egress-a_Sg_e | troubleshooting/why-supabase-edge-functions-cannot-provide-static-egress-ips-for-whitelisting-3d78b0,partial,"The egress guide explains what counts toward egress (database, storage, functions, realtime) and how it differs from other usage views. It may not reconcile this asker's specific numbers.",troubleshooting/all-about-supabase-egress-a_Sg_e,,check
+Q005,Questions,"Transaction-mode pooler: are SET LOCAL GUCs inside an explicit transaction guaranteed isolated between clients (RLS claims)?
+
+**Setup**
+
+- Small asset-management app (PWA) deployed on Vercel, Supabase Postgres as the database (no Supabase Auth / PostgREST — custom JWT auth at the app layer).
+- RLS is enabled on all tables. Policies read the user identity from a custom GUC, e.g. `current_setting('request.jwt.claims', true)::json->>'sub'`.
+- The app connects with a dedicated low-privilege role through the **transaction-mode pooler** (Supavisor, `aws-0-eu-west-1.pooler.supabase.com:6543`).
+- Every data access is wrapped in an explicit transaction that first sets the claims, then runs the queries:
+
+```sql
+BEGIN;
+SELECT set_config('request.jwt.claims', '{""sub"":""…"",""role"":""…""}', true); -- true = SET LOCAL semantics
+-- application queries, evaluated under RLS
+COMMIT;
+```
+
+Policies are written fail-closed: if the GUC is absent, `current_setting(..., true)` returns NULL and nothing matches.
+
+**Questions**
+
+1. In transaction mode, is it **guaranteed** that a client owns the underlying server connection for the whole explicit transaction (BEGIN → COMMIT/ROLLBACK), so `SET LOCAL` / `set_config(..., true)` values can never be observed by another client sharing the pool?
+2. Between two assignments of the same server connection to different clients, does Supavisor issue a reset (`DISCARD ALL` or equivalent)? Asked because a *session-level* `SET` leaking across clients would silently defeat ",https://github.com/orgs/supabase/discussions/47946,"Your design is sound, and the guarantee you're looking for is actually stronger than pooler behavior — it comes from Postgres itself.
+
+**1. Connection ownership during a transaction: yes.** In transaction mode the *transaction* is the unit of multiplexing — a server connection is assigned to one client at `BEGIN` and isn't handed to anyone else until that transaction ends with `COMMIT`/`ROLLBACK`. Interleaving two clients' statements inside one open transaction would break transaction semantics entirely; no transaction-mode pooler does that.
+
+**2. But you don't even need to trust the pooler fo",holdout,database/connecting-to-postgres | troubleshooting/supavisor-faq-YyP5tI | auth/oauth-server/token-security,partial,"In transaction mode a server connection is assigned for the length of a transaction, so SET LOCAL inside an explicit transaction stays isolated. The Supavisor FAQ covers pooling modes but may not state the RLS-claims guarantee.",troubleshooting/supavisor-faq-YyP5tI,,check
+Q006,Questions,"LANGUAGE sql function returns 0 rows; identical inlined body and identical plpgsql function both return rows
+
+Project ref: kcsbwuptmqjkscpprkmy
+
+Summary: A plain LANGUAGE sql STABLE function (public.match_kb_chunks(vector, integer) — single overload, SECURITY INVOKER, owner postgres, proconfig NULL) returns 0 rows. In the same transaction, same impersonated role (authenticated) and same request.jwt.claims: (a) the function's WHERE clause executed directly returns 3 rows; (b) the function body inlined as a raw SELECT returns 3 rows; (c) a newly created LANGUAGE plpgsql function with identical semantics (kb_search_chunks) returns 3 rows. Dropping and recreating the sql function (fresh pg_proc OID) plus notify pgrst, 'reload schema' changed nothing. Reproduces both through PostgREST rpc and directly in the SQL editor.
+
+Catalog state: single pg_proc row; prosecdef = false; owner postgres; proconfig NULL. Table RLS enabled, not forced, owner postgres. pgvector 0.8.2 in extensions schema.
+
+Questions: (1) Any pooler/prepared-statement/plan-cache mechanism that could cause this? (2) Any known pgvector operator resolution issue inside LANGUAGE sql functions? (3) Can anyone check server-side plans/logs for these calls?
+<img width=""797"" height=""625"" alt=""Screenshot 2026-07-04 at 19 39 09"" src=""https://github.com/user-attachments/assets/1bc58a61-4edb-4e0f-9e4e-aa93ebaba903"" />
+<img width=""797"" height=""625"" alt=""Screenshot 2026-07-04 at 19 41 28"" src=""https://github.com/user-attac",https://github.com/orgs/supabase/discussions/47609,,holdout,database/functions | database/extensions/pg_net | troubleshooting/rls-performance-and-best-practices-Z5Jjwv,no,,,,
+Q007,Questions,"postgres_changes INSERT/UPDATE not delivered to client despite SUBSCRIBED channel and valid RLS
+
+**Project ref:** `eaksrtkvarlfhfjtzuam`
+**Table:** `public.projects`
+**Publication:** `supabase_realtime`
+**Client libs:** `@supabase/[email]`, `@supabase/[email]`
+**Framework:** Next.js 16.2.6 (App Router, Turbopack)
+
+## Symptom
+
+Channel subscribes successfully (`status: SUBSCRIBED`), heartbeats (`phx_reply`) arrive normally every ~15–30s, but **zero `postgres_changes` messages are ever received** for INSERT/UPDATE/DELETE on `projects` — including rows whose `user_id` exactly matches the connected user's `auth.uid()`, which RLS should (and does) permit for a normal `SELECT`.
+
+Confirmed by watching the raw WebSocket **Messages** panel live in DevTools while inserting a row from another tab: only heartbeats appear, no `postgres_changes` frame arrives at all.
+
+## Reproduced in
+
+- Desktop Chrome, normal window
+- Desktop Chrome, Incognito window
+- Mobile browser, entirely different network (cellular, not the same LAN/ISP as desktop)
+
+All three show the identical symptom, ruling out browser profile, extensions, and local network as causes.
+
+## Environment
+
+| | |
+|---|---|
+| Client construction | `createBrowserClient(url, anonKey)` — module-scope singleton, confirmed single instance via a runtime instance-ID log across every component on the page |
+| RLS on `projects` | enabled; `SELECT` scoped to `user_id = auth.uid()` (confirmed working correctl",https://github.com/orgs/supabase/discussions/47579,"Since Realtime enforces RLS on `postgres_changes`, the usual cause of ""SUBSCRIBED + heartbeats fine but zero change events"" is that the socket is connected **anonymously** — with `@supabase/ssr` the browser client often doesn't have the user's access token attached, so RLS silently drops every event.
+
+Things to check, in order:
+
+1. **Set the auth token on the realtime client** after sign-in (and again on token refresh):
+   ```ts
+   supabase.realtime.setAuth(session.access_token)
+   ```
+   And make sure you subscribe from the **browser** client that holds the session — not a server component.
+2",holdout,troubleshooting/realtime-postgres-changes-troubleshooting | troubleshooting/realtime-isolating-server-side-vs-client-side-issues-with-inspector-and-devtools | troubleshooting/realtime-messages-not-arriving,partial,"The Realtime troubleshooting doc covers the publication and RLS checks the asker already did, then the client-side checks. A socket connected anonymously (no user access token set) is the likely cause.",troubleshooting/realtime-postgres-changes-troubleshooting,,check
+Q008,Questions,"How do I fetch only specific columns from a Supabase table using the JavaScript client?
+
+Hi everyone! 👋
+I'm just getting started with Supabase and loving it so far. I have a table called users with several columns (id, name, email, created_at, avatar_url, etc.), but in my app I only need id, name, and email.
+I know in SQL you'd write:
+sqlSELECT id, name, email FROM users;
+But how do I do the same thing using the Supabase JavaScript client (@supabase/supabase-js)?
+Here's what I've tried so far — fetching everything:
+jsconst { data, error } = await supabase
+  .from('users')
+  .select('*');
+Is there a way to select only specific columns instead of *? And does it actually improve performance, or does Supabase fetch everything behind the scenes anyway?
+Thanks in advance! 🙏",https://github.com/orgs/supabase/discussions/46308,"Yes! You can pass a comma-separated list of column names into .select() instead of '*':
+jsconst { data, error } = await supabase
+  .from('users')
+  .select('id, name, email');
+This tells the PostgREST API (which Supabase uses under the hood) to return only those columns — it does genuinely reduce the payload, so it's good practice especially for wide tables or mobile apps where bandwidth matters.",holdout,auth/auth-web3 | auth/oauth-server/oauth-flows | troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y,no,,,,
+Q009,Questions,"What is the right way to have a sorting index?
+
+I have a table, with the following fields:
+
+**`books` table**
+
+| Name         | Type   | Properties  |
+|--------------|--------|-------------|
+| `id`         | `uuid` | primary key |
+| `author_id`  | `uuid` | foreign key |
+| `title`      | `text` |             |
+| `sort_index` | `int8` |             |
+
+The plan is for me to be able to create a list of books, that I can sort by `sort_index`:
+
+```js
+const booksRes = await supabase
+  .from('books')
+  .select('id, title')
+  .order('sort_index')
+```
+
+This is fine, but the part I am stuck on is creating and updating (and for that matter, deleting) rows.
+
+If I try to insert a new row, there is a race condition, since two users could insert data with the same `sort_index` value.  Even if I make sure to re-fetch the data just before, there is still a race.
+
+```js
+const books = booksRes.data
+
+const newBookRes = await supabase
+  .from('books')
+  .insert({ title: 'Right Ho, Jeeves', sort_index: books.length })
+  .select()
+```
+
+I can create a unique constraint `(author_id, sort_index)` to prevent data being inserted with a duplicate `sort_index`, however this makes it difficult to update the `sort_index`, for example when swapping two rows.
+
+I could create a [Postgres sequence](https://www.postgresql.org/docs/current/sql-createsequence.html) on `sort_index`, then I wouldn't need to submit this field, however I believe this would be unique across the whole t",https://github.com/orgs/supabase/discussions/45976,,holdout,database/full-text-search | database/json | database/extensions/index_advisor,no,,,,
+Q010,Questions,"How to rotate legacy service role key
+
+I'd like to rotate my legacy service role key. I'm not interested in updating to the new api key system right now, but i only see an option to disable the service role key. is there no way to rotate?",https://github.com/orgs/supabase/discussions/45395,,holdout,auth/signing-keys | troubleshooting/rotating-anon-service-and-jwt-secrets-1Jq6yd | troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z,yes,"You can't: rotating the legacy anon, service_role and JWT secrets is no longer possible. Migrate to asymmetric JWT signing keys and the new publishable/secret API keys. If you are already on the new symmetric signing keys, use Rotate Keys under Project Settings, JWT Keys, then revoke the previous key.",troubleshooting/rotating-anon-service-and-jwt-secrets-1Jq6yd,,
+Q011,Questions,"sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) could not translate host name ""postgres"" to address: Name or service not known
+
+**Hey** 
+
+I built a backend using FastAPI and sqlalchemy, and I used PostgreSQL. I connected it to Supabase using ```Direct Connection String``` where I selected ```Session Pooler``` (IPv4). The setup worked perfectly on my local windows machine, however, when I tried doing the same in **Github Codespaces**,  I got this error logged when I tried running *alembic upgrade head* :
+
+```
+sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) could not translate host name ""hidden"" to address: Name or service not known
+``` 
+
+I tried using the **IPv6** connection string, but that failed too.
+
+**Details**
+
+1. Screenshot:
+
+<img width=""855"" height=""90"" alt=""issue"" src=""https://github.com/user-attachments/assets/2a9acaed-6562-4b29-9846-2c722b6553bb"" />
+
+
+---
+
+2. DB connection link:
+
+I use this link to connect with PostgreSQL db in my python code: 
+```
+f'postgresql://{settings.db_username}:{settings.db_password}@{settings.db_hostname}/{settings.db_name}'
+```
+
+As I mentioned above aswell, this works perfectly fine on my local machine, whether I'm using Supabase's db, or a local PostgreSQL instance. 
+
+---
+
+3. Reproducing the erro
+
+The easiest way to reproduce the error would be to fork my [repository](https://github.com/Qasim-Hassan/pdf-sharing-app).
+Follow the guide in *README.md* to setup the backend.
+This way,",https://github.com/orgs/supabase/discussions/45117,"If you r already using the Supabase host and env vars are loading, then i think it might be a hostname format issue.
+I think for Session Pooler (IPv4), the host usually looks like: `aws-0-<region>.pooler.supabase.com` and requires port `6543`. Also check things like ---> No extra spaces or quotes in `DB_HOSTNAME`, you are using the correct port for pooler vs direct (5432 vs 6543), the full connection string resolves correctly inside Codespaces (ping or nslookup).
+If still the hostname  can not be resolved, it might be a DNS/network restriction in Codespaces.",holdout,troubleshooting/using-sqlalchemy-with-supabase-FUqebT | troubleshooting/how-to-interpret-and-explore-the-postgres-logs-OuCIOj | troubleshooting/supavisor-and-connection-terminology-explained-9pr_ZO,partial,The SQLAlchemy guide covers connection strings and pooler hosts. A 'could not translate host name' error usually means the host environment variable did not load in Codespaces.,troubleshooting/using-sqlalchemy-with-supabase-FUqebT,,check
+Q012,Questions,"Need help removing orphaned files, already contacted support
+
+Hello,
+
+I am requesting my support ticket SU-358051 be bumped if possible.
+
+I accidentally deleted rows from storage.objects which caused my data to be orphaned (my fault I know). I have until 4/22 to reduce storage size, after which my database will be non-functional. I have filed two support tickets, the first one has not received any responses after three days and the second received an automated reply that did not help.
+
+I understand that I am on the free plan and should not be expecting quick responses, but I want to ensure this orphaned data is deleted before 4/22. If my support ticket could be bumped, that would be greatly appreciated. For reference, my latest support ticket is SU-358051.
+
+Thank you!",https://github.com/orgs/supabase/discussions/44908,,holdout,troubleshooting/high-cpu-and-slow-queries-with-error-must-be-a-superuser-to-terminate-superuser-process | auth/server-side/advanced-guide | database/orioledb,partial,"The storage-usage doc explains that deleting rows directly from storage.objects leaves orphaned files and that deletes must go through the Storage API. It likely does not give a way to clean up files already orphaned, which needs support.",troubleshooting/storage-unexpectedly-high-usage-or-exceed_storage_size_quota-errors-ae21a5,,check
+Q013,Questions,"After changing DB password, connection wont work
+
+I get either a circuit broken error, or can't reach server, yet through terminal that port is reachable... ",https://github.com/orgs/supabase/discussions/44667,https://supabase.com/docs/guides/troubleshooting/error-connection-refused-when-trying-to-connect-to-supabase-database-hwG0Dr,tune,troubleshooting/supavisor-error-password-authentication-failed-after-password-rotation | troubleshooting/fatal-password-authentication-failed | database/connecting-to-postgres,partial,The pooler password-rotation doc covers authentication failures after a password change. A circuit breaker or unreachable-server error after a reset may need a different fix.,troubleshooting/supavisor-error-password-authentication-failed-after-password-rotation,,check
+Q014,Questions,"Add verification code step after sign up
+
+Hello everyone,
+I’m trying to understand whether the following flow is possible:
+
+I have a sign-up form where the user provides their email and password, and then I want to redirect them to /verify-email, where they must enter a 6-digit verification code sent via email. This step is important because I need it to trigger some business logic.
+
+I’ve experimented with enabling and disabling the “Confirm email” setting:
+ • When email confirmation is disabled (auto-confirmed users), the user gets a valid session immediately after signing up. This works well for me because I can redirect them to /verify-email, and if they leave and come back later (even after logging in), my Next.js middleware can still force them to complete the verification step. **But the problem here is I'm not able to verify the code because email confirmation disabled based what I've read**
+ • However, when email confirmation is enabled, the user is created but no session is established—only the user data is returned. This creates me several issues:
+ - The state is not persisted, so on the /verify-email page I don’t reliably have access to the user’s email. I’m unsure what happens if the user closes the browser and tries to continue later and also not sure how a “resend code” flow should work in this case.
+
+I considered storing the email in session storage, but that approach seems unreliable if the user closes the tab or switches devices.
+
+So my main quest",https://github.com/orgs/supabase/discussions/44531,,tune,auth/passwords | auth/auth-email-passwordless | auth/auth-email-templates,partial,The email-template docs cover sending a numeric code with {{ .Token }} and verifying it with verifyOtp. Whether this fits the asker's exact sign-up flow needs confirming.,auth/auth-email-templates,,check
+Q015,Questions,"My project shows about 2.83 GB database usage on the usage page but my usage is too less
+
+My project shows about 2.83 GB database usage on the usage page.
+
+But inside SQL:
+- pg_database_size(current_database()) = 2678 MB
+- sum(pg_total_relation_size(oid)) from pg_class = 77 MB
+- WAL size = 160 MB
+- pg_replication_slots returns no rows
+
+My visible tables and indexes are tiny, so about 2.6 GB is unexplained.
+Please check whether this is due to orphaned storage, internal platform accounting, or unreclaimed database files.",https://github.com/orgs/supabase/discussions/44403,,tune,troubleshooting/understanding-the-usage-summary-on-the-dashboard-D7Gnle | troubleshooting/exhaust-disk-io | database/extensions/pg_graphql,partial,The usage-summary doc explains how dashboard database size is computed. It may not explain a 2.6 GB gap against table sizes.,troubleshooting/understanding-the-usage-summary-on-the-dashboard-D7Gnle,,check
+Q016,Questions,"Custom Domain: JWT iss claim still points to .supabase.co after activation
+
+## Context                                                                                                                                                                  
+                                                                                                                                                                              
+I have a **Custom Domain** addon (not vanity subdomain) that is fully active and serving traffic. After activating the custom domain and re-authenticating (signing out and back in), the JWT `iss` claim still references the original `<project-ref>.supabase.co/auth/v1` URL rather than the custom domain.
+                                                                                                                                                                              
+  ## Expected behavior                                                                                                                                                        
+   
+  The [Custom Domains documentation](https://supabase.com/docs/guides/platform/custom-domains) states:                                                                        
+                                                         
+  > Supabase Auth will use the custom domain immediately once activated.                                                                                                      
+  ",https://github.com/orgs/supabase/discussions/44373,,tune,troubleshooting/nxdomain-error-connecting-to-a-supabase-project | auth/enterprise-sso/auth-sso-saml | auth/third-party/firebase-auth,no,,,,
+Q017,Questions,"How to insert pgvector embedding from Make.com via RPC - invalid input syntax for type vecto
+
+## Problem
+I'm trying to insert a pgvector embedding from Make.com into a Supabase table via an RPC function.
+
+## Setup
+- Embedding model: Voyage AI voyage-3-lite (1024 dimensions)
+- Make.com sends embedding via POST to `/rest/v1/rpc/insertar_documento`
+- Column type: `vector(1024)`
+
+## RPC Function
+```sql
+CREATE OR REPLACE FUNCTION insertar_documento(
+  p_contenido text,
+  p_resumen text,
+  p_categoria text,
+  p_entidad text,
+  p_archivo text,
+  p_embedding vector(1024)
+)
+RETURNS void AS $$
+BEGIN
+  INSERT INTO documentos_sks (contenido, resumen, categoria, entidad_vinculada, archivo, embedding)
+  VALUES (p_contenido, p_resumen, p_categoria, p_entidad, p_archivo, p_embedding);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+## Make.com JSON body
+```json
+{
+  ""p_contenido"": ""text..."",
+  ""p_embedding"": [-0.024675341, 0.003345289, ...]
+}
+```
+
+## Errors
+- When sending as string: `invalid input syntax for type vector: ""[-0.024675341...]""`
+- When sending as array without quotes: `[400] Empty or invalid json`
+
+## Question
+What is the correct JSON body format to send a vector(1024) from Make.com to a Supabase RPC function via PostgREST?",https://github.com/orgs/supabase/discussions/44312,,tune,functions/examples/semantic-search | database/extensions/pgvector | storage/vector/working-with-indexes,partial,The pgvector docs cover vector columns and passing embeddings. The exact input format for an RPC call from Make.com needs confirming.,database/extensions/pgvector,,check
+Q018,Questions,"Column level security plus RBAC best practice
+
+Hi, I have a basic use case but I don't know exactly what approach to adopt.
+
+I have a post table. Each post has to be validated by a validator. So my post table has two columns ""validation_date"" and ""validator_id"". Both of them have to be updated once when the validation is done only. For the security point of view, I have a ""validator"" role applied to certain users and then a RLS policy which allow insert and update on post table for validator and post owner. But this means, a post owner can edit the validation columns (and a validator can also modified them).
+
+What's the best approach to handle this ? Because if I'm not mistaken, column level security can be applied only with ""grant"" and then only to Postgres roles but here the only role I use is ""authenticated"" and RLS is applied to the entire row so I'm a bit lost.
+
+Thanks in advance for your help.
+Rémi",https://github.com/orgs/supabase/discussions/43911,I would add an before update trigger function and set new.validation_date = old.validation_date.  Then in the function code do a check if the user is a validator or not to do that.  Do the same for other columns you want to make sure don't change.,tune,database/postgres/row-level-security | database/postgres/column-level-security | database/tables,partial,The column-level security doc covers granting UPDATE on specific columns. The asker's two-role case (owner versus validator) is more likely handled with a trigger or separate role.,database/postgres/column-level-security,,check
+Q019,Questions,"Invite user by email
+
+I recently added a feature to my nextjs application to invite user by their emails, now when I tested the link sent to my email({{confirmationURL}}) redirected to /set-password it doesn't automatically logs the user in-I still need to refresh the page.
+
+For reference:
+set-password is a server page and I have a SetPasswordForm that is a client and on there I did 
+
+```
+const urlParams = new URLSearchParams(window.location.hash.substring(1));
+const accessToken = urlParams.get('access_token');
+const refreshToken = urlParams.get('refresh_token');
+
+const supabase = createClient();
+
+supabase.auth.setSession({
+	access_token: accessToken || '',
+	refresh_token: refreshToken || ''
+});
+```
+	
+createClient is the createBrowserClient supabase/ssr
+
+am I doing this correctly or am I missing anything else and is using the browser client safe here? Thank you!",https://github.com/orgs/supabase/discussions/43473,,tune,auth/auth-email-templates | auth/auth-web3 | troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665,partial,The email-template docs cover the invite email and its confirmation URL. The session and hash handling on the client side may not be covered.,auth/auth-email-templates,,check
+Q020,Questions,"vault: Why is the secret first stored unencrypted and then replaced by the encrypted value?
+
+Looking at the vault code,
+https://github.com/supabase/vault/blob/16f1570e0ff5d384897b9bc15b5183a45702e2ab/sql/supabase_vault--0.3.0.sql#L70,
+I asked myself why the secret is first inserted as unencrypted, only to be replaced by the encrypted value.
+
+Is there a guarantee, the unencrypted value won't get synced to disk meanwhile?",https://github.com/orgs/supabase/discussions/43179,,tune,database/vault | database/extensions/pgsodium | troubleshooting/working-around-the-edge-function-secrets-limit,no,,,,
+Q021,Questions,"How to keep Supabase dashboard usable while enabling RLS on app tables?
+
+Hi, I’m using Supabase with a Next.js dashboard app and I’m trying to enable RLS safely.
+
+When I enable RLS on some tables (for example profiles, courses, enrollments) but my policies are not perfect, the Supabase table editor in the dashboard sometimes shows no rows or behaves strangely. To keep working, I had to disable RLS multiple times, which leaves those tables “UNRESTRICTED”.
+
+I’d like to:
+
+Enable proper RLS for app users (e.g. students see only their own rows, etc.).
+
+Still be able to view and manage all rows normally in the Supabase dashboard as the project owner.
+
+Questions:
+
+How does the Supabase dashboard query data when RLS is enabled—does it use the service role and bypass RLS, or does it respect the same policies as anon/authenticated clients?
+
+Is there a recommended pattern for RLS policies that keeps the app secure but does not break the dashboard table view?
+
+Are there common mistakes in policies that cause the dashboard to show empty tables even though data exists?
+
+Any concrete examples or best practices would really help me move RLS from “UNRESTRICTED” to properly protected without losing dashboard usability.",https://github.com/orgs/supabase/discussions/43046,,tune,database/postgres/row-level-security | troubleshooting/realtime-postgres-changes-troubleshooting | database/extensions/rum,partial,"The RLS doc covers enabling RLS. It may not say how to keep the dashboard usable, since the dashboard SQL and table editor run as postgres, which bypasses RLS.",database/postgres/row-level-security,,check
+Q022,Questions,"Error: Failed to run sql query: ERROR: 42501: permission denied to set parameter ""app.jwt_secret""
+
+hello. can anyone help me about what's wrong with my code? I tried to enable row level security for my database but I got Error: Failed to run sql query: ERROR: 42501: permission denied to set parameter ""app.jwt_secret"" in SQL Editor. Eventhough Iam using a postgres role but I can't pass my RLS. Please help for my issue. Here's my code:
+
+-- ShowFarm Complete Database Schema
+-- Run this in your Supabase SQL Editor to fix all 404/406 errors
+
+-- Enable Row Level Security
+ALTER DATABASE postgres SET ""app.jwt_secret"" TO 'your_jwt_secret';
+
+-- Create users table (if not exists)
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    full_name TEXT,
+    avatar TEXT,
+    total_entries INTEGER DEFAULT 0,
+    total_badges INTEGER DEFAULT 0,
+    learning_streak INTEGER DEFAULT 0,
+    last_entry_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create entries table (if not exists)
+CREATE TABLE IF NOT EXISTS entries (
+    id TEXT PRIMARY KEY,
+    userid TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    category TEXT DEFAULT 'tutorial',
+    date DATE NOT NULL,
+    tx_hash TEXT,
+    blockchain TEXT DEFAULT 'demo',
+    createdat T",https://github.com/orgs/supabase/discussions/42972,,tune,troubleshooting/realtime-postgres-changes-troubleshooting | database/postgres/row-level-security | troubleshooting/resolving-500-status-authentication-errors-7bU5U8,no,,,,
+Q023,Questions,"Using auth.uid() in the DECLARE block of a Database Function returns just the text ""authenticated"" but once inside the BEGIN / END block it returns a valid UUID
+
+I have a database function I am creating using the SQL Editor that looks like this:
+
+```
+create or replace function send_friend_request(target_user uuid)
+returns text
+language plpgsql
+security invoker
+as $$
+declare
+  reverse_request_id uuid;
+begin
+  raise log 'userid %', auth.uid();
+  raise log 'role = %', auth.role();
+```
+
+Weirdly enough, if I try to do the following in declare: `current_user uuid := auth.uid()`, then the current_user value is equal to just ""authenticated"". But if I print out the log of auth.uid() in the function block, then it works as expected and gives me a valid UUID.
+
+Any idea what could be going on here?",https://github.com/orgs/supabase/discussions/42900,"The issue is that `current_user` is a **reserved system identifier** in PostgreSQL. It always returns the name of the current database role — it's not a regular variable you can assign to.
+
+In Supabase, the authenticated role is literally named `""authenticated""`, so `current_user` will always return the string `""authenticated""` regardless of what you try to assign to it in the `DECLARE` block.
+
+**Fix:** Just rename the variable:
+
+```sql
+create or replace function send_friend_request(target_user uuid)
+returns text
+language plpgsql
+security invoker
+as $$
+declare
+  requesting_user uuid := auth.ui",tune,database/debugging-functions | troubleshooting/rls-performance-and-best-practices-Z5Jjwv | auth/auth-hooks/password-verification-hook,no,,,,
+Q024,Questions,"How to use email SMTP SSL only? (TLS = false, SSL = true)
+
+I am using smtp_test.py and it look like my SMTP host can only use SSL than TLS, How to configure it in Supabase? Currently i get 504 timeout",https://github.com/orgs/supabase/discussions/42815,"hi @anggaaryas 💚🙌
+Currently there are no SSL settings for custom SMTP.
+use port `465` for your SMTP configuration, which automatically uses implicit SSL
+If you're still getting `504` timeouts, verify your credentials. ",tune,troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y | troubleshooting/tls-handshake-failures-after-cbc-cipher-removal | troubleshooting/supabase-cli-transport-error-antivirus-firewall-tls-interception,no,,,,
+Q025,Questions,"Is there a way to disable Data API  through Terraform/API
+
+Hi, I’m new to Supabase and I’m using it mainly as a managed Postgres database behind my own backend API, so I don’t need the Data API exposure.
+
+In the dashboard, I can see the Enable Data API toggle, but I couldn’t find a way to control this setting via:
+- the Supabase Terraform provider, or
+- the Supabase Management REST API docs.
+
+Is disabling Enable Data API currently supported through Terraform/API and I’m missing it, or is this not exposed yet?
+If not exposed yet, is this planned for future support?
+
+I’d like to fully automate this in my IaC for environment consistency and security hardening.",https://github.com/orgs/supabase/discussions/42744,,tune,auth/auth-web3 | troubleshooting/realtime-postgres-changes-troubleshooting | database/postgres/row-level-security,no,,,,
+Q026,Questions,"What's the proper way to force email re-verification every 30 days?
+
+Can I just set up a daily function that sets auth.users.email_confirmed_at to NULL if its been 30days+ since email_confirmed_at or is there a better way?",https://github.com/orgs/supabase/discussions/42560,,tune,auth/users | auth/server-side/advanced-guide | troubleshooting/realtime-warn-sending-broadcast-message,no,,,,
+Q027,Questions,"New user signups not allowed with otp
+
+first i have setup signIn 
+```
+`const { data: authData, error: signupError } = await supabase.auth.signUp({
+        email: payload.email,
+        password: payload.password,
+  
+  }) 
+```
+but then i want  to change to simple email  signups via otp 
+```
+const { data: authData, error: signupError } = await supabase.auth.signInWithOtp({
+        email: payload.email,
+  
+  })   
+```
+and also i want to handle something like if the singUp email is not authenticated then we should have created a session signin the user and send the otp again if not autheticated , just want handle the usecase where user left at the otp verification step ",https://github.com/orgs/supabase/discussions/42477,,tune,auth/auth-hooks/before-user-created-hook | auth/auth-email-passwordless | auth/auth-hooks/send-email-hook,partial,The passwordless-email docs cover signInWithOtp. The asker's mixed sign-up flow may need more than the page explains.,auth/auth-email-passwordless,,check
+Q028,Questions,"Cannot enable RLS policy for storage.buckets table
+
+I am Trying to upload files in supabase buckets. I am not using supabase AUth I have my own token creation system and user table.
+
+Now I have setup RLS policy all the buckets as shown below
+
+CREATE POLICY ""anon can do 1x24yub_0"" ON ""storage"".""objects"" FOR INSERT TO ""anon"" WITH CHECK (((""bucket_id"" = 'fontuploads'::""text"") AND (""split_part""(""name"", '/'::""text"", 1) = ""public"".""get_org_id""())));
+
+
+
+CREATE POLICY ""anon can do 1x24yub_1"" ON ""storage"".""objects"" FOR SELECT TO ""anon"" USING (((""bucket_id"" = 'fontuploads'::""text"") AND (""split_part""(""name"", '/'::""text"", 1) = ""public"".""get_org_id""())));
+
+
+
+CREATE POLICY ""anon can do 1x24yub_2"" ON ""storage"".""objects"" FOR DELETE TO ""anon"" USING (((""bucket_id"" = 'fontuploads'::""text"") AND (""split_part""(""name"", '/'::""text"", 1) = ""public"".""get_org_id""())));
+
+
+
+CREATE POLICY ""anon can do 1x24yub_3"" ON ""storage"".""objects"" FOR UPDATE TO ""anon"" USING (((""bucket_id"" = 'fontuploads'::""text"") AND (""split_part""(""name"", '/'::""text"", 1) = ""public"".""get_org_id""())));
+
+
+The get_org_id() function is designed to handle the custom Header passed from the Frontend using below function
+
+export const supabaseAuthClient = () => {
+    const userSession = userSessionStore();
+    return createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+            headers: {
+                'Authorization': userSession?.session?.token ? `${userSession?.session.token}` : ''
+            }
+   ",https://github.com/orgs/supabase/discussions/42311,,tune,storage/security/access-control | storage/schema/custom-roles | database/postgres/row-level-security,partial,"The Storage access-control doc covers writing policies on storage.objects. Storage tables are managed, so enabling RLS on storage.buckets is not possible for users.",storage/security/access-control,,check
+Q029,Questions,"SvelteKit/Supabase: Is it necessary to call `getUser` and `getSession` on every page in a SvelteKit app?
+
+In the docs [here](https://supabase.com/docs/guides/getting-started/tutorials/with-sveltekit) on building a user management app with SvelteKit, the user's session is verified from the root `+layout.server.ts` which makes the session data available to all child pages:
+```
+// src/routes/+layout.server.ts
+import type { LayoutServerLoad } from './$types'
+
+export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, cookies }) => {
+  const { session, user } = await safeGetSession(); // Calls `getUser` and `getSession`
+
+  return {
+    session,
+    user,
+    cookies: cookies.getAll(),
+  }
+}
+```
+Then in the PageServerLoad function of child routes, the session is retrieved again using `safeGetSession`: 
+
+```
+// /src/route/child/+page.server.ts;
+export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
+  const { session, user } = await safeGetSession() // safeGetSession called again
+  if (!session) {
+    redirect(303, '/')
+  }
+ // rest of load function...
+}
+  ```
+  
+Why not use the session returned from the root level `+layout.server.ts` using `const { session } = await parent();` in the child routes instead of calling `safeGetSession()` again? Is it necessary to call `safeGetSession()` in all children routes? Is there a risk of stale session data and error states?
+  
+Thanks!
+",https://github.com/orgs/supabase/discussions/42286,,tune,auth/server-side/creating-a-client | auth/choosing-a-server-package | auth/passwords,partial,The server-side auth docs explain verifying the user on the server with getUser rather than trusting getSession. The SvelteKit layout question is only partly covered.,auth/server-side/creating-a-client,,check
+Q030,Questions,"Storage quota mismatch: Dashboard shows 3.83GB used but storage.objects only has 5 rows (~8MB)
+
+Hi Supabase team,
+
+I’m on the free tier and facing a storage quota mismatch.
+
+Dashboard shows:
+
+Storage Size: 3.83 GB / 1 GB (383%)
+
+But my storage metadata is almost empty:
+
+Metadata checks
+select count(*) from storage.objects;
+Result:
+[{ ""count"": 5 }]
+
+Total size of tracked objects:
+select name, bucket_id, (metadata->>'size')::bigint as bytes
+from storage.objects;
+Only ~8.7 MB total.
+
+Multipart uploads are empty
+select count(*) from storage.s3_multipart_uploads;
+select count(*) from storage.s3_multipart_uploads_parts;
+Both return 0.
+
+Table sizes are tiny
+
+storage.objects is only ~176 kB.
+
+So the quota usage seems to come from orphaned backend storage objects not referenced in Postgres.
+
+Project ref:
+
+mczecifjqmhbgjkxqsna
+
+Is there any way to trigger storage cleanup or quota recalculation for orphaned objects?
+
+Thanks!
+
+",https://github.com/orgs/supabase/discussions/42278,,tune,storage/serving/bandwidth | storage/production/scaling | storage/quickstart,partial,The storage-usage doc explains orphaned objects as one cause of a quota mismatch. It may not explain this asker's 3.83 GB figure.,troubleshooting/storage-unexpectedly-high-usage-or-exceed_storage_size_quota-errors-ae21a5,,check
+Q031,Questions,"How to disable direct access to table APIs and allow access only through RPC functions?
+
+I have some tables that I don’t want users to access directly through the default table APIs.
+Access should happen only via RPC functions, which are called internally by my system.
+
+I tried using REVOKE ALL on the tables, but when I do that, Row Level Security (RLS) stops working, which breaks my permission logic.
+
+Does anyone know the correct way to:
+
+- Block direct access to tables
+
+- Keep RLS enabled and working
+
+- Allow access only through RPC functions?
+
+<img width=""1041"" height=""829"" alt=""image"" src=""https://github.com/user-attachments/assets/f08620a0-4f7c-499e-84c2-90fcb44b5bbe"" />
+",https://github.com/orgs/supabase/discussions/42268,,tune,database/postgres/row-level-security | troubleshooting/why-is-my-select-returning-an-empty-data-array-and-i-have-data-in-the-table-xvOPgx | database/functions,partial,The RLS and function docs cover revoking table grants and using SECURITY DEFINER functions. Keeping RLS working after REVOKE is only partly covered.,database/postgres/row-level-security,,check
+Q032,Questions,"Uniqueness of user auth method enforced on deleted user records
+
+We are in the process of testing our auth system.  We are also utilizing the linkIdentity() method to enable multiple login methods.
+
+When we go to test linking a phone number or email address, it enforces identity uniqueness on phone numbers and emails, as you would expect - except - it does so for deleted user records.  
+
+REPRO 
+
+- I create a user with phone number 555-222-3333 and run some test cases
+- Then I **delete** that user.  
+- Then create a new user with auth method Apple (or email or Google, or anything but phone)
+- Now do a linkIdentity() with phone number 555-222-3333
+- The system tells me that phone number already exists, and blocks me from linking
+- If I look at my Auth table view, I only have only one user in there - it's our dev instance.
+
+Is this something I'm doing wrong, or should it not be enforcing uniqueness on deleted user records when we use linkIdentity()?  ",https://github.com/orgs/supabase/discussions/42256,,tune,auth/auth-anonymous | auth/users | auth/auth-email-templates,no,,,,
+Q033,Questions,"Best way to provision external (MongoDB) user records on Supabase Auth user creation?
+
+We use **MongoDB** as our primary database and maintain a `_user` collection that stores all application-specific user data.
+
+We plan to use **Supabase strictly for authentication** (Google, Apple, Email) and **not** use Supabase Postgres for application data. MongoDB will remain the only source of truth for user records.
+
+On successful user creation in Supabase Auth, we want to automatically create a corresponding `_user` document in MongoDB.
+
+## Constraints / Requirements
+
+- Supabase is used **only for authentication**
+- MongoDB is the **only database** for user data
+- We support multiple clients (Web + Mobile)
+- We want to **avoid client-driven user provisioning**
+- User creation should be **server-side, deterministic, and idempotent**
+- We do not want to couple MongoDB with Supabase Postgres
+
+
+## Current Limitation Observed
+
+After exploring the platform, it appears that:
+
+- Supabase does **not** currently provide native HTTP webhooks for auth lifecycle events (e.g. `user.created`)
+- Supabase **Auth Hooks cannot trigger Edge Functions**
+- Auth Hooks are limited to internal auth behavior and cannot call external services
+
+Because of this, Supabase cannot proactively notify an external backend (e.g. AWS Lambda) when a user is created.
+
+
+## Question
+
+Given the above constraints and limitations:
+
+- What is the **recommended or idiomatic way** to provision user ",https://github.com/orgs/supabase/discussions/42199,"Okay, Current Solution :  
+- On user creation, a data is added to `auth.users` automatically
+- Created a Database Web-hook, on inserts to `auth.users` , and created user on mongodb. ",tune,auth/auth-smtp | auth/enterprise-sso/auth-sso-saml | auth/social-sign-in/auth-apple,no,,,,
+Q034,Questions,"SSL on PostgresSQL
+
+I wanted to know, how can we enable SSL certificate in Postgres? I wanted to connect cloudflare Hyperdrive that required SSL connection, can someone please help me here",https://github.com/orgs/supabase/discussions/42139,,tune,database/pgadmin | database/psql | database/dbeaver,no,,,,
+Q035,Questions,"Can triggers be disabled for a single RPC function?
+
+Is it possible to
+```
+set local session_replication_role = 'replica';
+```
+in a function that can be called as an RPC? In my testing this fails, despite the function being `SECURITY DEFINER` and the function working fine when run directly as the `postgres` user. I want to disable some triggers for this function; the table in question is `storage.objects`, so I cannot `alter table ... disable trigger all` because the table is owned by `supabase_storage_admin`. ",https://github.com/orgs/supabase/discussions/41879,,tune,database/postgres/event-triggers | database/postgres/row-level-security | database/extensions/pg_net,no,,,,
+Q036,Questions,"How should we handle sign out errors?
+
+I am using Supabase with Next.js. Is there a way to gracefully handle sign out errors? I am using Supabase's server client for auth. My current way of thinking is:
+
+```
+export class AuthService {
+  constructor(private readonly supabase: SupabaseClient) {}
+
+  signOut = async () => {
+    const { error } = await this.supabase.auth.signOut()
+
+    if (error) {
+      // Manually remove auth cookies
+    }
+  }
+}
+```
+
+However, I'm not sure if removing auth cookies is the only thing we need to consider. How do you guys handle sign out errors?",https://github.com/orgs/supabase/discussions/41762,,tune,auth/server-side/advanced-guide | troubleshooting/how-to-migrate-from-supabase-auth-helpers-to-ssr-package-5NRunM | auth/social-sign-in/auth-facebook,no,,,,
+Q037,Questions,"Issue linking Email to authenticated user (Resend OTP not working)
+
+# Issue: Challenges with Email Linking Flow and OTP Resend Mechanism
+
+## Context
+I am implementing a flow to link an email address to an existing account (originally authenticated via Phone/SMS) during the onboarding process. I am facing some inconsistencies regarding how `updateUser` behaves and the lack of a clear ""resend"" path for this specific scenario.
+
+## Current Flow
+1. **Initiation:** I call `supabase.auth.updateUser({ email })` to trigger the verification email.
+2. **The ""No Return"" Issue:** `updateUser` does not return a specific state confirming the code was sent or a ""pending"" status. Currently, I'm using `onAuthStateChange` to listen for the `USER_UPDATED` event to detect completion, which feels like a workaround.
+3. **Verification:** I use `supabase.auth.verifyOtp({ email, token, type: 'email_change' })`.
+4. **Resend:** I use `supabase.auth.resend({ email, type: 'email_change' })`.
+
+## The Problem
+The **Resend** logic is currently broken/inconsistent:
+* Resend doesn't work.
+
+## Questions
+1. **Recommended Method:** What is the officially recommended way to send and resend an OTP code specifically for linking an email to an existing session?
+2. **Resend Implementation:** How should the ""Resend"" action be handled? Should I use `supabase.auth.resend({ type: 'email_change', email })` even if the email isn't fully linked yet?
+",https://github.com/orgs/supabase/discussions/41683,,tune,auth/auth-anonymous | auth/passwords | troubleshooting/otp-verification-failures-token-has-expired-or-otp_expired-errors-5ee4d0,no,,,,
+Q038,Questions,"new row violates row-level security policy while creating signed urls
+
+i am trying to create signed url from my react/vite app for my files in private bucket. but it gives me this error
+```
+{
+    ""statusCode"": ""403"",
+    ""error"": ""Unauthorized"",
+    ""message"": ""new row violates row-level security policy""
+}
+```
+here is my react code trying to create signed url
+```
+function Test() {
+  const generate = async () => {
+    const { data, error } = await supabase.storage
+      .from('testing')
+      .createSignedUrl('user.jpeg', 60)
+    console.log('Data:', data)
+    console.log('Error:', error)
+  }
+  return (
+    <>
+      <Button onClick={generate}>Generate</Button>
+    </>
+  )
+}
+```
+Now both the bucket ""testing"" and the file does exist in the right place but it still gives me this error 
+i have also tried to create policies for insert, select and update like this and it does not even work for public or authenticated here are my policies
+```
+
+CREATE POLICY ""Allow public to read testing bucket objects"" ON ""storage"".""objects""
+AS PERMISSIVE FOR SELECT
+TO public
+USING (bucket_id = 'testing')
+
+CREATE POLICY ""Allow public to insert testing bucket objects"" ON ""storage"".""objects""
+AS PERMISSIVE FOR INSERT
+TO public
+
+WITH CHECK (bucket_id = 'testing')
+
+CREATE POLICY ""Allow public to update testing bucket objects"" ON ""storage"".""objects""
+AS PERMISSIVE FOR UPDATE
+TO public
+USING (bucket_id = 'testing')
+WITH CHECK (bucket_id = 'testing')
+```",https://github.com/orgs/supabase/discussions/41646,,tune,storage/serving/downloads | troubleshooting/realtime-postgres-changes-troubleshooting | storage/uploads/resumable-uploads,partial,The Storage access-control doc covers the permissions each operation needs. The exact cause of this RLS error on createSignedUrl needs confirming.,storage/security/access-control,,check
+Q039,Questions,"Revoking Magic Link or Email Verification Token?
+
+Per the title, is there a way to revoke a magic link or email verification token once it has been sent?",https://github.com/orgs/supabase/discussions/41614,"I can think of two potential workarounds:
+
+1. Patch by overriding the token_hash in auth.one_time_tokens, but auth schema is restricted, so this is not a possible option.
+2. Regenerate a email verification silently without sending another email.
+
+Option 2 was achieved by https://supabase.com/docs/reference/javascript/auth-admin-generatelink to generate a new token without sending an email. Seems clunky but does the job. ",tune,troubleshooting/otp-verification-failures-token-has-expired-or-otp_expired-errors-5ee4d0 | auth/auth-email-passwordless | auth/auth-email-templates,no,,,,
+Q040,Questions,"Can I import code outside of supabase/functions/?
+
+My project structure is:
+```
+- packages/
+  - lib/ <-- Exposes @my/lib
+  - server/
+ - supabase/
+   - functions/
+     - function1 <--- I want to import @my/lib
+deno.json
+package.json
+```
+
+Is there a way for me to share code and resources between functions and non-function code? I have a lot of code to reuse. 
+I've tried to run this with symlinks, absolute file paths, pnpm link, etc all through deno.json.
+Every time it tells me:
+```
+worker boot error: failed to bootstrap runtime: failed to create the graph: Module not found
+```
+
+It would be extremely helpful to be able to use code outside of `supabase/functions`. I will most likely move off supabase edge functions if I can't get this to work.
+
+Cheers",https://github.com/orgs/supabase/discussions/41173,,tune,auth/server-side/creating-a-client | functions/dependencies | functions/examples/mcp-server-mcp-lite,partial,The functions dependencies doc covers shared code and imports. Importing from outside supabase/functions is likely not supported.,functions/dependencies,,check
+Q041,Questions,"Best way to obtain raw access token on ssr environments to be used on external resource server.
+
+Hi! Kinda new to this supabase SSR thing.
+
+I have a system that has a REST API, and NextJS for app, so I need to pass the `access_token` in the authorization header through an axios interceptor before sending it to my REST API server
+
+I'm using supabase-ssr right now and followed [this guide](https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=sveltekit&queryGroups=package-manager&package-manager=pnpm#install) as described in the supabase docs.
+
+I have a server function that should get the access token from the httpOnly cookies in the browser like below:
+```typescript
+""use server""
+
+export async function getAccessToken() {
+  const supabase = await createSupabaseServerClient();
+
+  const session = await supabase.auth.getSession();
+
+  if (!session.data.session) {
+    throw new Error(""No active session found"");
+  }
+
+  return session.data.session.access_token;
+}
+```
+
+I assume this is fine since [this security notice from the docs](https://supabase.com/docs/reference/javascript/auth-getsession). Only mentions about the `user` object being unreliable but supposedly getting the access token should be fine right?
+
+Another way is to just get the access token directly via:
+```typescript
+
+import { cookies } from ""next/headers"";
+
+const cookieStore = await cookies();
+
+const accessToken = cookieStore.get(""ACCESS_TOKEN",https://github.com/orgs/supabase/discussions/41143,,tune,troubleshooting/how-do-you-troubleshoot-nextjs---supabase-auth-issues-riMCZV | auth/server-side/creating-a-client | auth/choosing-a-server-package,partial,The server-side auth docs cover creating a client and reading the session. How to get the raw access token for an external API needs confirming.,auth/server-side/creating-a-client,,check
+Q042,Questions,"Am I correct that PKCE is the only auth flow for email magic link in Expo/React Native?
+
+In the Expo app that I'm working on, the designer wants a ""provide email -> tap email link -> open app and set password"" flow.
+
+After a few days of research and trial and error, I have concluded that the docs are either incorrect or misleading and that there is no implicit flow in this case, and only PKCE. This is fine, but it'd be nice to have some clarification.
+
+When I follow the implicit flow docs, I find that the `redirect_to` url never receives `access_token` and `refresh_token`, regardless of whether I supply a web url (i.e. an edge function in my case) or a mobile scheme (`myapp://verify...`). I *am* able to get `tokenHash` in the email, so I can do `verifyOtp` in the client.
+
+It's not a big deal but I'm just still confused as to what determines if the implicit flow is used and the tokens are appended to `redirect_to`? According to the [JS client api docs](https://supabase.com/docs/reference/javascript/initializing), the default flow is implicit. If that was changed the docs REALLY need updating.",https://github.com/orgs/supabase/discussions/41133,,tune,auth/server-side/advanced-guide | auth/sessions/implicit-flow | troubleshooting/pkce-flow-errors-cannot-parse-response-or-zgotmplz-in-magic-link-emails-433665,partial,The PKCE and implicit-flow docs cover both flows. Whether implicit flow works for magic links in Expo needs confirming.,auth/sessions/implicit-flow,,check
+Q043,Questions,"How to properly format Firebase scrypt password hash for migration?
+
+I'm trying to migrate Firebase Authentication users to Supabase using the Firebase scrypt format supported in https://github.com/supabase/auth/pull/1768. However, password verification is failing　and I need help understanding the correct format.
+
+## Investigation Process
+
+### Step 1: Initial Testing
+
+I cloned this repository and ran password_test.go with:
+ - My own password
+ - The password hash exported from Firebase Auth
+
+Result: Encoding error occurred
+
+### Step 2: Code Investigation
+
+I examined the implementation and found that StdEncoding (base64 with + and /) is used in some parts of the code for decoding Firebase scrypt parameters.
+
+However, Firebase exports password hashes and salts using base64url encoding (with - and _):
+  {
+    ""passwordHash"": ""cxbDzJu2W1DU20SXh--UNtR9Tu2tH2GSKQ91hGBAEN49OJJpuZbdhz-3GdYnBujQXxkXdqnhUehXVeLA6zoF-g=="",
+    ""passwordSalt"": ""G-s6NpQQJdtvlQ==""
+  }
+
+### Step 3: Local Fix Attempt
+
+I modified [the local code](https://github.com/supabase/auth/blob/7f36eb053286038d01ba1650dd48a15508550ce0/internal/crypto/password.go#L128C50-L136) to use URLEncoding instead of StdEncoding and ran password_test.go again.
+
+  Result:
+  - ✅ The encoding error disappeared
+  - ❌ But now I get a simple password mismatch error
+
+## Questions
+
+1. Is it correct to use StdEncoding for decoding passwordHash and passwordSalt?
+2. Why does password verification still fail aft",https://github.com/orgs/supabase/discussions/41076,,tune,auth/third-party/firebase-auth | troubleshooting/fatal-password-authentication-failed | auth/third-party/overview,no,,,,
+Q044,Questions,"Number of DB connections provided by Supabase
+
+Hello everyone,
+I have taken supabse pro plan.I want to know how many database connections it provides and how many user will be able to use my application at same time?",https://github.com/orgs/supabase/discussions/41051,,tune,troubleshooting/supavisor-and-connection-terminology-explained-9pr_ZO | troubleshooting/supavisor-faq-YyP5tI | troubleshooting/realtime-project-suspended-for-exceeding-quotas,partial,The Supavisor terminology doc covers connection limits by compute size. The exact count and concurrent user figure for the Pro plan needs confirming.,troubleshooting/supavisor-and-connection-terminology-explained-9pr_ZO,,check
+Q045,Questions,"Creating roles on supabase and use direct connection
+
+Hi community, I enabled RLS for my table and created a role called `test_role` on the supabase console. i realized that when i tried direct connection (ipv6) and session pooler (ipv4) approaches, i couldn't connect to my database when i changed the user to `test_role`. on the session pooler, i would think it's the role name with a unique id of the project postpended and separated by a "".""
+
+any advice here will be great. ",https://github.com/orgs/supabase/discussions/40974,,tune,troubleshooting/supavisor-and-connection-terminology-explained-9pr_ZO | troubleshooting/fatal-password-authentication-failed | database/connecting-to-postgres,partial,The connection terminology doc explains the username format for the pooler (role.project-ref). A role created without LOGIN and a password cannot connect.,troubleshooting/supavisor-and-connection-terminology-explained-9pr_ZO,,check
+Q046,Questions,"How to enable provider_token storage for GitHub OAuth?
+
+ Hi Supabase team,
+
+  I'm using GitHub OAuth with Supabase Auth, but the `provider_token`
+  is not being included in the session data after authentication.
+
+  Project ID: wfvcxxpasvgrzhexoylx
+  OAuth Provider: GitHub
+  Scopes: repo, read:user, read:org
+
+  I need the GitHub access token to call GitHub API on behalf of users.
+  How can I enable automatic storage of the provider_token?
+
+  I tried setting `sessions_provider_token: true` via API, but it doesn't 
+  seem to have any effect.
+
+  Thank you!",https://github.com/orgs/supabase/discussions/40864,,tune,auth/social-sign-in/auth-google | auth/social-sign-in/auth-azure | auth/oauth-server/oauth-flows,no,,,,
+Q047,Questions,"Using Supabase new publishable/secret keys with React Native + Express
+
+Hi everyone,
+
+I’m building a mobile app using React Native (Expo) , Express for the backend, and Supabase as the backend service.
+
+I want to adopt the new Supabase API keys (publishable_key and secret_key) as recommended by Supabase. ( see : https://supabase.com/docs/guides/api/api-keys)
+
+However, I noticed in the doc that the new keys cannot be used like a JWT in the Authorization header to represent a user and the secret_key cannot directly verify user tokens
+
+My question is:
+
+How should I implement user authentication on the backend in a CRUD request while using the new keys?
+
+Is there a new recommended approach/workflow for mobile apps to handle this ?
+
+Thanks in advance!",https://github.com/orgs/supabase/discussions/40853,,tune,auth/signing-keys | auth/quickstarts/with-expo-react-native-social-sign-in | auth/social-sign-in/auth-apple,partial,The signing-keys doc covers the new publishable and secret keys and verifying user tokens with the project's JWKS. The Express-specific pattern needs confirming.,auth/signing-keys,,check
+Q048,Questions,"Storage usage not decreasing after deleting old project
+
+Hi,
+I’m on the free plan and I recently deleted an old project that had accumulated too much data. I duplicated the project and now only use the new one.
+
+However, the organization storage usage still includes the storage from the deleted project, even though the project is fully removed.
+
+In my active project, the storage is completely empty.
+
+There are no files stored at all, but the dashboard still shows that my organization is using storage from the old project.
+
+It seems like the usage metrics were not reset after deleting the project.
+
+Could you please help reset or recalculate the storage usage for my organization?
+
+Thanks",https://github.com/orgs/supabase/discussions/40801,,tune,troubleshooting/realtime-postgres-changes-troubleshooting | troubleshooting/understanding-the-usage-summary-on-the-dashboard-D7Gnle | troubleshooting/restore-project-after-90-days-pause,no,,,,
+Q049,Questions,"postgres_fdw cannot connect to external PostgreSQL (timeout). Works from VPS, fails in Supabase
+
+Hello!
+I’m trying to connect Supabase PostgreSQL to an external PostgreSQL database using postgres_fdw.
+The external DB is accessible from anywhere, has no SSL, and accepts TCP on port 5432.
+
+I can connect to it successfully from:
+- VPS (Netherlands)
+- local machine
+- any n8n client (with sslmode=disable)
+
+But all attempts from Supabase fail with timeout — both through:
+
+`IMPORT FOREIGN SCHEMA ...`
+
+and even through a simple test:
+
+```
+SELECT dblink_connect(
+  'test_conn',
+  'host=XXX port=5432 dbname=mpdb user=USER password=PASS sslmode=disable'
+);
+```
+
+Always results in:
+
+`Error: upstream timeout`
+
+Details:
+- Supabase region: eu-central-1
+- Free plan (FDW should work even on free)
+- The remote server does not block AWS
+- FDW server and user mapping are configured correctly
+- pg_foreign_server shows correct host/port/dbname
+
+My question:
+
+Does Supabase block outgoing connections to external IPv4 databases from the Free or Nano plans?
+Or is there an additional setting required to allow FDW / outgoing connections to a non-SSL PostgreSQL server?
+",https://github.com/orgs/supabase/discussions/40780,,tune,database/connecting-to-postgres | database/extensions/wrappers/overview | database/prisma/prisma-troubleshooting,no,,,,
+Q050,Questions,"pg_partman is in the docs, but not available?
+
+Hi,
+
+I'm looking into partitioning of data for scalability. In the docs, there is reference to pg_partman, but it doesn't seem to be available in the extensions.
+
+Can I use pg_partman with Supabase? If not, can you advise other solutions?
+
+I love Supabase, but you have had pg_partman in the docs for months without enabling the extension
+
+Thanks,
+Sean
+",https://github.com/orgs/supabase/discussions/40749,"Also answered on Discord.  But it is not available yet...
+https://github.com/orgs/supabase/discussions/35851#discussioncomment-14960656",tune,database/migrating-to-pg-partman | database/extensions/timescaledb | database/partitions,partial,"The pg_partman migration doc exists, but the extension is reported as not available. Native Postgres partitioning is the alternative.",database/migrating-to-pg-partman,,check
+Q051,Questions,"Cron is enabled but the edge function didn't trigger
+
+I have a cron running at every 15th minute . I see the cron trigger is successful, but I don't see any edge function logs. I'm on a free tier. What could be the problem here?
+Cron logs
+<img width=""1332"" height=""654"" alt=""image"" src=""https://github.com/user-attachments/assets/b0926a67-d88b-4eee-811e-a66b37f038c0"" />
+Edge function logs:
+<img width=""1332"" height=""654"" alt=""image"" src=""https://github.com/user-attachments/assets/21550df1-f226-455c-8350-8fd9800a297d"" />
+Another cron triggers at every minute and I don't see any triggers between 14:57  ISTto 15:26 IST today, that is for almost half an hour
+",https://github.com/orgs/supabase/discussions/40740,,tune,troubleshooting/pgcron-debugging-guide-n1KTaz | troubleshooting/why-do-i-see-auth--api-requests-in-the-dashboard-my-app-has-no-users-CyadiO | troubleshooting/resolving-500-status-authentication-errors-7bU5U8,partial,The pg_cron debugging guide covers job runs and failures. Why the function logs show no invocation needs confirming.,troubleshooting/pgcron-debugging-guide-n1KTaz,,check
+Q052,Questions,"How to use Deno KV in a Supabase Edge Function?
+
+How to use Deno KV in a Supabase Edge Function? According to the documentation, it is available through Deno Deploy but I need to set unstable KV when running Deno Deploy (`--unstable-kv`): https://docs.deno.com/deploy/kv/.
+
+I'm not sure how to do this within the context of Supabase Edge Functions. I tried adding `""unstable"": [""kv""]` to my deno.json but without result. ",https://github.com/orgs/supabase/discussions/40713,,tune,functions/dependencies | functions/examples/mcp-server-mcp-lite | functions/quickstart,no,,,,
+Q053,Questions,"how to promote standby jwt key
+
+- I have only 1 standby key in jwt signing key page and no current legacy key
+- I am unable to promote the current standby key to current key
+- I am unable to reset the previous legacy jwt key to be current key
+- when I click rotate key nothing happens and no windows appear even after hard refreshing the page and logging out and back in and waiting 1 day
+- CLI doesn't have a command to rotate jwt signing key
+
+I want to know how to promote my standby key please",https://github.com/orgs/supabase/discussions/40663,,tune,auth/signing-keys | troubleshooting/rotating-anon-service-and-jwt-secrets-1Jq6yd | troubleshooting/realtime-warn-sending-broadcast-message,partial,The signing-keys doc explains key states and rotation. A rotate or promote button that does nothing is likely a dashboard bug.,auth/signing-keys,,check
+Q054,Questions,"Clarification Needed on Moving Files Between Buckets in Supabase Storage
+
+Hello!
+
+I am trying to move files from one bucket to another using the Supabase Storage API. I referred to the documentation here: https://supabase.com/docs/reference/javascript/storage-from-move
+
+The documentation states: ""Moves an existing file to a new path in the same bucket.""
+However, there is an optional parameter ⁠options with a key ⁠destinationBucket, described as ""The destination options.""
+This suggests that moving files between different buckets might be supported or planned. However, I encountered errors when attempting this functionality with the ⁠destinationBucket parameter.
+
+**Example Code:**
+
+```
+const { data, error } = await supabase
+  .storage
+  .from('temp')
+  .move('user/timestamp/file.png', 'user/id/file.png', { destinationBucket: 'users' });
+```
+
+**Issue:**
+
+I'm receiving an ⁠Object not found error, even though the file exists in the source bucket.
+
+**Questions:**
+
+1. If the move function is intended to work within the same bucket, why is there a ⁠destinationBucket parameter? Does this parameter enable cross-bucket moves, or is there a misunderstanding in its usage? Is the documentation accurate?
+
+2. If cross-bucket moves are not supported, the alternative involves downloading files to a server and re-uploading them to a different bucket, which seems inefficient. Is there a more efficient method to transfer files between buckets without the need for download",https://github.com/orgs/supabase/discussions/40656,"It is supported according to the docs.
+https://supabase.com/docs/guides/storage/management/copy-move-objects#move-objects
+
+Maybe an RLS issue?
+",tune,storage/management/copy-move-objects | troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d | storage/quickstart,yes,"Yes, moving and copying across buckets is supported by passing the destinationBucket option. Moving needs select and update permission on the object; copying needs select on the source and insert on the destination, so a failure is usually an RLS policy problem.",storage/management/copy-move-objects,,
+Q055,Questions,"Is there a way to deploy an auth hook through an automation?
+
+According to the [docs](https://supabase.com/docs/guides/auth/auth-hooks?queryGroups=language&language=sql#deploying):
+
+> In the dashboard, navigate to [Authentication > Hooks](https://supabase.com/dashboard/project/_/auth/hooks) and select the appropriate function type (SQL or HTTP) from the dropdown menu.
+
+This means that the step to deploy this function is manual. Is there a way to deploy this through an automation? Maybe a SQL migration?",https://github.com/orgs/supabase/discussions/40538,,tune,auth/auth-hooks | functions/examples/auth-send-email-hook-react-email-resend | auth/auth-hooks/before-user-created-hook,partial,The auth-hooks doc covers enabling hooks in the dashboard. Automating deployment through config or the Management API needs confirming.,auth/auth-hooks,,check
+Q056,Questions,".npmrc environment variables replacement for edge-functions
+
+I am using env-vars in my .npmrc file to authenticate against private repositories using the auth-token in a environment variable. How or are they or are they supported during edge-function deployment using `supabase functions deploy`?
+
+I would say its a common pattern, so you dont have to alter or create a .npmrc file each deployment:
+```
+@username:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+```
+
+NPM does support it, Deno as well but I didn't find any documentation about this anywhere here other than that .npmrc files are supported in general. If they are supported by Deno itself, it should be fine but how do I apply my env-var?
+
+Help would be appreciated :)",https://github.com/orgs/supabase/discussions/40531,,tune,functions/dependencies | functions/examples/mcp-server-mcp-lite | functions/deploy,no,,,,
+Q057,Questions,"can not establish database connection using Dbeaver  to supbase tried all host using aws zones
+
+# Bug report
+
+<!-- 
+
+⚠️ We receive a lot of bug reports which have already been solved or discussed. If you are looking for help, please try these first:
+
+- Docs: https://docs.supabase.com
+- Discussions: https://github.com/supabase/supabase/discussions
+- Discord: https://discord.supabase.com
+
+Before opening a bug report, please verify the following: 
+
+-->
+
+- [x] I confirm this is a bug with Supabase, not with my own application. 
+- [ ] I confirm I have searched the [Docs](https://docs.supabase.com), GitHub [Discussions](https://github.com/supabase/supabase/discussions), and [Discord](https://discord.supabase.com). 
+
+## Describe the bug
+
+A clear and concise description of what the bug is.
+
+## To Reproduce
+
+Steps to reproduce the behavior, please provide code snippets or a repository:
+
+1. Go to '…'
+2. Click on '…'
+3. Scroll down to '…'
+4. See error
+
+## Expected behavior
+
+A clear and concise description of what you expected to happen.
+
+## Screenshots
+
+If applicable, add screenshots to help explain your problem.
+
+## System information
+
+- OS: [e.g. macOS, Windows]
+- Browser (if applies) [e.g. chrome, safari]
+- Version of supabase-js: [e.g. 6.0.2]
+- Version of Node.js: [e.g. 10.10.0]
+
+## Additional context
+
+Add any other context about the problem here.
+",https://github.com/orgs/supabase/discussions/41826,,tune,troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y | troubleshooting/how-do-you-troubleshoot-nextjs---supabase-auth-issues-riMCZV | troubleshooting/pgcron-debugging-guide-n1KTaz,no,,,,
+Q058,Questions,"Supabase query returns empty data from translations table in Next.js
+
+Hello,
+
+I have an issue with Supabase in a Next.js app.
+
+I created a table called `translations` with columns:
+
+* key
+* language_code
+* value
+
+Example row:
+
+* key: add_bird
+* language_code: en
+* value: Add bird
+
+I run this query:
+
+```ts
+const { data, error } = await supabase
+  .from(""translations"")
+  .select(""key,value"")
+  .eq(""language_code"", ""en"")
+```
+
+Problem:
+
+* The query does not return the expected data in the frontend
+* UI does not update even if data exists
+* Other tables (birds, breeds) work correctly
+
+What I checked:
+
+* Env variables are correct
+* Table exists and has data
+* SQL queries return correct data
+* Restarted dev server and cleared cache
+* No typos in column names
+
+Additional info:
+
+* ""it"" has ~66 rows
+* ""en"" has ~6 rows
+* Even existing ""en"" rows are not reflected in UI
+
+What could cause this?
+
+Thanks.
+",https://github.com/orgs/supabase/discussions/44040,"If you are not getting an error then typically this means you have RLS enabled and don't meet RLS for the select policy.
+
+Next.js also does caching in many cases which can make it hard to test if you change things on the server after it has cached.  If you find you have an RLS problem and fix it you may need to figure out next.js caching or change the query filter so it does not get cached in order to test.",tune,troubleshooting/realtime-postgres-changes-troubleshooting | functions/examples/elevenlabs-transcribe-speech | troubleshooting/how-to-migrate-from-supabase-auth-helpers-to-ssr-package-5NRunM,yes,"An empty array with data present usually means RLS is enabled with no matching policy, the request has no signed-in user JWT, or a filter matches no rows. Test by disabling RLS, or set the policy to anon with USING true to check for a missing user session, or call a test function that returns auth.jwt().",troubleshooting/why-is-my-select-returning-an-empty-data-array-and-i-have-data-in-the-table-xvOPgx,,
+Q059,Questions,"Edge Functions cold start exceeds 10s timeout on free tier
+
+## Description
+
+Edge Functions are experiencing cold start delays that exceed the 10-second timeout limit on the free tier. This issue appears to occur during function initialization when processing requests.
+
+## Error Details
+
+The following stack trace was captured during a cold start scenario:
+
+```python
+Traceback (most recent call last):
+  File ""db/client.py"", line 388, in main
+    data = parse(body)
+  File ""lib/parser.py"", line 384, in _parse
+    return f(x)
+  File ""app/handlers.py"", line 330, in process
+    result = compute()
+  File ""db/client.py"", line 380, in _parse
+    data = parse(body)
+  File ""db/client.py"", line 238, in main
+    return f(x)
+AttributeError: 'NoneType' object has no attribute 'encode'
+```
+
+**Error**: `AttributeError: 'NoneType' object has no attribute 'encode'`
+
+This suggests that during the cold start initialization, a `None` value is being passed where a string (or byte-like object with an `encode` method) is expected, causing the function to fail before completing its startup sequence.
+
+## Reproduction Steps
+
+1. Deploy an Edge Function on the free tier
+2. Trigger the function after a period of inactivity (to ensure cold start)
+3. The function fails to start within 10 seconds
+4. The above AttributeError is thrown during the initialization phase
+
+## Expected Behavior
+
+Edge Functions should complete their cold start process within the 10-second timeout window on the free tier, properly handl",https://github.com/orgs/supabase/discussions/45801,,tune,troubleshooting/edge-functions-worker-timeouts-and-websocket-drops | storage/uploads/resumable-uploads | troubleshooting/edge-function-500-error-response,partial,The worker-timeouts doc covers Edge Function timeouts. The 10-second cold-start claim in this ticket needs confirming.,troubleshooting/edge-functions-worker-timeouts-and-websocket-drops,,check
+Q060,Questions,"Edge Function returns 401 Invalid JWT before execution (Verify JWT OFF, no logs)
+
+Hi everyone 👋 I’m stuck with an Edge Functions issue and could really use some help.
+
+TL;DR
+Edge Function always returns 401 Invalid JWT BEFORE execution. Verify JWT is OFF. No logs. Auth + REST work fine.
+
+Details:
+- Supabase Edge Function: `enter-matching`
+- Client: Flutter (Dart), Magic Link auth
+- Error: 401 Invalid JWT
+- Happens BEFORE function runs:
+  - No console logs at all
+  - Invocations are counted in dashboard
+- Verify JWT is OFF
+- Same behavior with:
+  - supabase.functions.invoke(...)
+  - raw HTTP POST to /functions/v1/enter-matching
+- Minimal function (`return { ok: true }`) also fails
+- Function redeployed multiple times
+
+Headers sent on every request:
+- Authorization: Bearer <access_token>
+- apikey: <anon_key>
+- Content-Type: application/json
+
+What works:
+- Auth (Magic Link) works
+- PostgREST works with the same access token
+- Session + JWT look valid
+
+Observations:
+This looks like the Edge Functions gateway rejecting the request *before* the function executes, not a bug in function code.
+
+Questions:
+1. Can Edge Functions return 401 Invalid JWT before execution even when Verify JWT is OFF?
+2. Could recent Supabase maintenance affect Edge Functions auth/gateway only?
+3. Could this be project-level corruption or config?
+4. Would creating a new project be a reasonable workaround?
+
+Happy to share project ref or screenshots if needed.  
+Thanks a ",https://github.com/orgs/supabase/discussions/42534,,tune,troubleshooting/edge-function-401-error-response | functions/auth-headers | functions/error-codes,yes,"A 401 before your code runs comes from the legacy JWT verification check on the Edge Function. Check the response body and edge logs, and turn JWT verification off for that function (Dashboard toggle, `supabase functions deploy --no-verify-jwt`, or the Management API), confirming the toggle really saved. Otherwise the key is invalid or in an incompatible format.",troubleshooting/edge-function-401-error-response,,
